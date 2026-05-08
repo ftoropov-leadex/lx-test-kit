@@ -22,3 +22,6 @@ package.json
 BACKLOG.md
 commit-plan.md
 projectMap.md
+publish.yml
+framework-messaging-rabbitmq/
+framework-db-oracle/

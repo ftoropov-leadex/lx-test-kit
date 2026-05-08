@@ -1,0 +1,24 @@
+.gradle/
+**/build/
+**/allure-results/
+/allure-report/
+/allure-results/
+
+# Avoid committing Gradle wrapper binary in this repository
+/gradle/wrapper/gradle-wrapper.jar
+pull_request_template.md
+.DS_Store
+.claude/
+.idea/
+CLAUDE.md
+allure-open.sh
+AllureTestNgListener-refs.md
+/.stoneforge/.worktrees/
+/.stoneforge/
+/node_modules/
+.opencode/
+package-lock.json
+package.json
+BACKLOG.md
+commit-plan.md
+projectMap.md

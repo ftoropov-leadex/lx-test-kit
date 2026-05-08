@@ -8,7 +8,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="com.apiframework" level="DEBUG" additivity="true"/>
+        <Logger name="io.leadex.aqa" level="DEBUG" additivity="true"/>
         <Root level="${sys:log4j2.level:-INFO}">
             <AppenderRef ref="Console"/>
         </Root>

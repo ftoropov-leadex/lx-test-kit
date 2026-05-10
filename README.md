@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation("systems.leadex.lxtestkit:framework-bundle:1.0.0")
+    testImplementation("systems.leadex.lxtestkit:framework-bundle:1.0.1")
 }
 ```
 
@@ -107,7 +107,12 @@ Chain: `.body()` → `BodyAssert` → `.field("x")` → `FieldAssert` → `.hasV
 | `FRAMEWORK_READ_TIMEOUT` | no | `15000` | `ConfigResolver` |
 | `FRAMEWORK_CLIENT_NAME` | no | `""` | `BaseApiTest` (Basic Auth) |
 | `FRAMEWORK_CLIENT_SECRET` | no | `""` | `BaseApiTest` (Basic Auth) |
+| `FRAMEWORK_RETRY_COUNT` | no | `0` | `FrameworkRetryAnalyzer` (max retries; `0` = off) |
+| `FRAMEWORK_RETRY_ON` | no | `""` | `FrameworkRetryAnalyzer` (csv: `network`, `timeout`, `5xx`; empty = any non-assertion failure) |
+| `FRAMEWORK_RETRY_DELAY_MS` | no | `0` | `FrameworkRetryAnalyzer` (sleep between attempts, ms) |
 | `SPLUNK_BASE_URL` | yes* | — | `SplunkConnectionConfig` |
+| `SPLUNK_ALLOW_UNTRUSTED_SSL` | no | `false` | `SplunkConnectionConfig` |
+| `CI` | no | `""` | `AllureTestNgListener` (non-blank suppresses local `executor.json`) |
 | `GITHUB_ACTOR` / `GITHUB_TOKEN` | CI only | — | GitHub Packages publish/resolve |
 
 > \* `SPLUNK_BASE_URL` is resolved at class-load time. Set it even if Splunk assertions are not the focus of the current suite, if any class referencing `SplunkSupport` is on the classpath.
@@ -118,8 +123,8 @@ Chain: `.body()` → `BodyAssert` → `.field("x")` → `FieldAssert` → `.hasV
 # All tests
 ./gradlew test
 
-# With retry
-FRAMEWORK_RETRY_MAX_RETRIES=2 FRAMEWORK_RETRY_DELAY_MS=500 ./gradlew test
+# With retry (env-driven; disabled by default)
+FRAMEWORK_RETRY_COUNT=2 FRAMEWORK_RETRY_ON=network,timeout,5xx FRAMEWORK_RETRY_DELAY_MS=500 ./gradlew test
 ```
 
 ## Allure reports

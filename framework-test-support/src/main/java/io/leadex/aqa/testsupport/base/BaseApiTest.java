@@ -38,7 +38,6 @@ public abstract class BaseApiTest {
     private Map<String, EndpointDefinition> endpoints;
     private String                          apiName;
 
-    /** The only domain binding a test must provide. Matches the {domain}.properties filename (without extension). */
     protected abstract String domain();
 
     @BeforeClass(alwaysRun = true)
@@ -61,10 +60,8 @@ public abstract class BaseApiTest {
             .setConfig(restAssuredConfig)
             .addFilter(new CorrelationIdFilter());
 
-        String clientName   = EnvResolver.string("FRAMEWORK_CLIENT_NAME", "");
-        String clientSecret = EnvResolver.string("FRAMEWORK_CLIENT_SECRET", "");
-        if (!clientName.isBlank() && !clientSecret.isBlank()) {
-            specBuilder.setAuth(preemptive().basic(clientName, clientSecret));
+        if (!config.clientName().isBlank() && !config.clientSecret().isBlank()) {
+            specBuilder.setAuth(preemptive().basic(config.clientName(), config.clientSecret()));
         }
 
         this.httpClient = new RestAssuredHttpClient(specBuilder.build());

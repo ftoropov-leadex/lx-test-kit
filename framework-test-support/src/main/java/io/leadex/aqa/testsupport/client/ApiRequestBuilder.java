@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Fluent builder for a single API request. Instantiated only by {@code BaseApiTest.call(...)}.
+ * Fluent builder for a single API request.
  *
  * <p>Null-omit rule: {@link #query}, {@link #header}, {@link #pathParam}, and {@link #bodyField}
  * silently skip {@code null} values — the setter is a no-op when {@code v == null}.

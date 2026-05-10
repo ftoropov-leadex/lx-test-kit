@@ -14,7 +14,7 @@ public record SplunkConnectionConfig(
             EnvResolver.required("SPLUNK_BASE_URL"),
             EnvResolver.string("SPLUNK_USERNAME", ""),
             EnvResolver.string("SPLUNK_PASSWORD", ""),
-            EnvResolver.bool("SPLUNK_ALLOW_UNTRUSTED_SSL", true)
+            EnvResolver.bool("SPLUNK_ALLOW_UNTRUSTED_SSL", false)
         );
     }
 }

@@ -113,7 +113,7 @@ public class AllureAspectJ {
                 ? joinPoint.getArgs()[0].getClass().getSimpleName()
                 : "value";
 
-        //Noise filter#2 cuts:
+        //Noise filter cuts:
         if (typeName.equals("ArrayNode")
                  || typeName.equals("ApiResponse") // assertThat [ApiResponse]
                  || typeName.equals("ObjectNode") //  assert in json validation step

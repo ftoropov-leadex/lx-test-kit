@@ -62,7 +62,7 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
     public void onFinish(ISuite suite) {
         String outputDir = EnvResolver.string("ALLURE_ENV_DIR", "allure-results");
         try {
-            String env = EnvResolver.string("FRAMEWORK_ENV", "dev");;
+            String env = EnvResolver.string("FRAMEWORK_ENV", "dev");
             Properties props = new Properties();
             props.setProperty("Environment", env);
             Files.createDirectories(Paths.get(outputDir));

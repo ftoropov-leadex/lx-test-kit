@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 /**
  * Utility methods for network failure detection used by the retry subsystem.
  */
-public final class NetworkAwareMethodListener {
+public final class NetworkFailureDetector {
 
     /**
      * Walks the cause chain looking for network connectivity exceptions.

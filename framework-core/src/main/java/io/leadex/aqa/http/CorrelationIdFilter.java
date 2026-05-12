@@ -22,6 +22,10 @@ public class CorrelationIdFilter implements Filter {
         CURRENT.remove();
     }
 
+    public static String currentId() {
+        return CURRENT.get();
+    }
+
     @Override
     public Response filter(FilterableRequestSpecification req,
                            FilterableResponseSpecification res,

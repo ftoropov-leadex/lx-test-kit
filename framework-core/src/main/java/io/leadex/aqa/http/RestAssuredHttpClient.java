@@ -114,7 +114,7 @@ public final class RestAssuredHttpClient implements HttpClient {
         T body = deserializeBody(rawBody, responseType);
         Map<String, String> headers = new LinkedHashMap<>();
         response.getHeaders().asList().forEach(header -> headers.put(header.getName(), header.getValue()));
-        String correlationId = headers.get("X-Correlation-Id");
+        String correlationId = headers.getOrDefault("X-Correlation-Id", CorrelationIdFilter.currentId());
 
         return new ApiResponse<>(
             response.statusCode(),

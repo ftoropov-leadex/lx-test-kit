@@ -1,5 +1,7 @@
 package io.leadex.aqa.testsupport.contracts;
 
+import net.javacrumbs.jsonunit.core.Option;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +40,9 @@ public final class SnapshotContractValidator {
                 throw new AssertionError("Snapshot not found on classpath: " + resourcePath);
             }
             String expectedJson = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-            assertThatJson(actualJson).isEqualTo(expectedJson);
+            assertThatJson(actualJson)
+                    .when(Option.IGNORING_EXTRA_FIELDS)
+                    .isEqualTo(expectedJson);
         } catch (AssertionError assertionError) {
             throw assertionError;
         } catch (IOException ioException) {

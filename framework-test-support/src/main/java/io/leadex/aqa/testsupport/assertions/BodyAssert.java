@@ -140,8 +140,20 @@ public final class BodyAssert extends AbstractAssert<BodyAssert, JsonNode> {
     private JsonNode navigate(String dotPath) {
         JsonNode current = actual;
         for (String key : dotPath.split("\\.")) {
-            current = current.path(key);
+            if (current.isArray() && isNonNegativeInteger(key)) {
+                current = current.path(Integer.parseInt(key));
+            } else {
+                current = current.path(key);
+            }
         }
         return current;
+    }
+
+    private static boolean isNonNegativeInteger(String key) {
+        if (key.isEmpty()) return false;
+        for (int i = 0; i < key.length(); i++) {
+            if (!Character.isDigit(key.charAt(i))) return false;
+        }
+        return true;
     }
 }

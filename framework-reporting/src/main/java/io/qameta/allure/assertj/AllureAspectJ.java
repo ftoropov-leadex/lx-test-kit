@@ -118,6 +118,18 @@ public class AllureAspectJ {
                  || typeName.equals("ApiResponse") // assertThat [ApiResponse]
                  || typeName.equals("ObjectNode") //  assert in json validation step
                  || typeName.equals("TextNode")   //  assert in json validation step (array validation)
+                 || typeName.equals("IntNode")
+                 || typeName.equals("LongNode")
+                 || typeName.equals("DoubleNode")
+                 || typeName.equals("FloatNode")
+                 || typeName.equals("ShortNode")
+                 || typeName.equals("BooleanNode")
+                 || typeName.equals("BigIntegerNode")
+                 || typeName.equals("DecimalNode")
+                 || typeName.equals("NullNode")
+                 || typeName.equals("MissingNode")
+                 || typeName.equals("POJONode")
+                 || typeName.equals("BinaryNode")
                  || typeName.equals("Jackson2Node")) return; // assert in snapshot validation step
 
         final String name = String.format("assertThat [%s]", typeName);

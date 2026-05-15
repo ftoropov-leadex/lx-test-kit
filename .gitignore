@@ -12,6 +12,7 @@ pull_request_template.md
 .idea/
 CLAUDE.md
 allure-open.sh
+/scripts/
 AllureTestNgListener-refs.md
 /.stoneforge/.worktrees/
 /.stoneforge/

@@ -3,11 +3,12 @@ package io.leadex.aqa.reporting.allure;
 import io.leadex.aqa.config.EnvResolver;
 import io.leadex.aqa.testsupport.retry.FrameworkRetryAnalyzer;
 import io.qameta.allure.Allure;
-import io.qameta.allure.testng.AllureTestNg;
 import io.restassured.RestAssured;
 import org.testng.ITestContext;
+import org.testng.ITestListener;
 import org.testng.ITestResult;
 import org.testng.ISuite;
+import org.testng.ISuiteListener;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -16,13 +17,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-public final class AllureTestNgListener extends AllureTestNg {
+public final class AllureTestNgListener implements ITestListener, ISuiteListener {
 
     private static volatile boolean filtersRegistered;
 
     @Override
     public void onStart(ITestContext context) {
-        super.onStart(context);
         if (!filtersRegistered) {
             TestLogAppender.install();
             RestAssured.filters(new AllureHttpFilter());
@@ -32,14 +32,12 @@ public final class AllureTestNgListener extends AllureTestNg {
 
     @Override
     public void onTestStart(ITestResult result) {
-        super.onTestStart(result);
         TestLogAppender.startCapture();
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
         attachTestLog();
-        super.onTestSuccess(result);
     }
 
     @Override
@@ -50,20 +48,17 @@ public final class AllureTestNgListener extends AllureTestNg {
             Allure.addAttachment("Failure stacktrace", "text/plain",
                 stackTraceOf(result.getThrowable()), ".txt");
         }
-        super.onTestFailure(result);
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
         TestLogAppender.stopAndDrain();
-        super.onTestSkipped(result);
     }
 
     // Writes environment.properties and (for local runs) executor.json to the Allure results directory
     // after the suite finishes — populates the Allure Environment and Executors widgets.
     @Override
     public void onFinish(ISuite suite) {
-        super.onFinish(suite);
         String outputDir = EnvResolver.string("ALLURE_ENV_DIR", "allure-results");
         try {
             String env = EnvResolver.string("FRAMEWORK_ENV", "dev");

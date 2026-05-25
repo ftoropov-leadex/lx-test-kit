@@ -22,8 +22,8 @@ public final class AllureHttpFilter implements Filter {
         String stepName = method + " " + path;
 
         return Allure.step(stepName, () -> {
-            Response response = ctx.next(req, resSpec);
             Allure.addAttachment("Request", "text/plain", formatRequest(req), ".txt");
+            Response response = ctx.next(req, resSpec);
             Allure.addAttachment("Response", "text/plain", formatResponse(response), ".txt");
             return response;
         });

@@ -62,7 +62,12 @@ public final class FrameworkRetryAnalyzer implements IRetryAnalyzer {
         if (FILTERS.contains("network") && NetworkFailureDetector.hasNetworkCause(failure)) return true;
 
         String msg = failure.getMessage() == null ? "" : failure.getMessage().toLowerCase(Locale.ROOT);
-        if (FILTERS.contains("timeout") && (msg.contains("timed out") || msg.contains("timeout"))) return true;
+        if (FILTERS.contains("timeout")) {
+            String rootMsg = NetworkFailureDetector.rootCauseMessage(failure);
+            String rootMsgLc = rootMsg == null ? "" : rootMsg.toLowerCase(Locale.ROOT);
+            if (msg.contains("timed out") || msg.contains("timeout")
+                    || rootMsgLc.contains("timed out") || rootMsgLc.contains("timeout")) return true;
+        }
         if (FILTERS.contains("5xx")     && msg.contains("http 5")) return true;
 
         return false;

@@ -27,3 +27,5 @@ packageNamespaceDependencies.md
 publish.yml
 framework-messaging-rabbitmq/
 framework-db-oracle/
+ISSUES-report.md
+local-testrun-dev.md

@@ -23,7 +23,7 @@ allprojects {
 subprojects {
 
     group = "systems.leadex.lxtestkit"
-    version="1.0.3"
+    version="1.0.4"
     plugins.withId("java-library") {
 
         apply(plugin = "maven-publish")

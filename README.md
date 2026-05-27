@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation("systems.leadex.lxtestkit:framework-bundle:1.0.3")
+    testImplementation("systems.leadex.lxtestkit:framework-bundle:1.0.4")
 }
 ```
 

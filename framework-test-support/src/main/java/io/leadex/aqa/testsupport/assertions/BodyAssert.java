@@ -5,16 +5,20 @@ import io.leadex.aqa.testsupport.contracts.JsonSchemaContractValidator;
 import io.leadex.aqa.testsupport.contracts.SnapshotContractValidator;
 import org.assertj.core.api.AbstractAssert;
 
+import java.util.function.Consumer;
+
 /**
  * Fluent assertions over a parsed JSON response body.
  *
- * <p>Obtained via {@code ApiResponseAssert.assertThat(response).body()}.
+ * <p>Obtained via {@code ApiResponseAssert.assertThat(response).body(b -> ...)}.
  * All public methods are intercepted by {@code AllureAspectJ} via LTW — no manual
  * {@code Allure.step()} calls are needed.
  *
- * <p>Navigation methods ({@link #first()}, {@link #at(int)}, {@link #field(String)}) never throw
- * on their own. Assertions ({@link #isNotEmpty()}, {@link #hasField(String)}) fail with explicit
- * messages. Field-level assertions fail inside {@link FieldAssert}.
+ * <p>Navigation methods ({@link #first(Consumer)}, {@link #at(int, Consumer)},
+ * {@link #field(String, Consumer)}) run their assertions inside a lambda scope, producing nested
+ * Allure steps. They never throw on their own. Assertions ({@link #isNotEmpty()},
+ * {@link #hasField(String)}) fail with explicit messages. Field-level assertions fail inside
+ * {@link FieldAssert}.
  *
  * <p>{@link #matchesSchema(String)} and {@link #matchesSnapshot(String)} always operate on
  * {@code rawBody} — the full original response JSON — regardless of how deep navigation has gone.
@@ -40,13 +44,13 @@ public final class BodyAssert extends AbstractAssert<BodyAssert, JsonNode> {
     // ── Array navigation ────────────────────────────────────────────────────
 
     /**
-     * Asserts the body is a non-empty JSON array, then returns a new {@code BodyAssert}
-     * scoped to the element at {@code index}.
+     * Asserts the body is a non-empty JSON array, then runs {@code asserts} against a new
+     * {@code BodyAssert} scoped to the element at {@code index}. Returns {@code this} for chaining.
      *
      * <p>{@code rawBody} is passed through unchanged — schema/snapshot validation always
      * targets the full response.
      */
-    public BodyAssert at(int index) {
+    public BodyAssert at(int index, Consumer<BodyAssert> asserts) {
         isNotNull();
         if (!actual.isArray() || actual.size() <= index) {
             failWithMessage(
@@ -54,29 +58,32 @@ public final class BodyAssert extends AbstractAssert<BodyAssert, JsonNode> {
                 index, actual.isArray() ? actual.size() : 0
             );
         }
-        return new BodyAssert(actual.get(index), rawBody);
+        asserts.accept(new BodyAssert(actual.get(index), rawBody));
+        return this;
     }
 
     /**
-     * Shortcut for {@link #at(int) at(0)}.
+     * Shortcut for {@link #at(int, Consumer) at(0, asserts)}.
      */
-    public BodyAssert first() {
-        return at(0);
+    public BodyAssert first(Consumer<BodyAssert> asserts) {
+        return at(0, asserts);
     }
 
     // ── Field navigation ────────────────────────────────────────────────────
 
     /**
-     * Navigates to a field using dot-notation (e.g. {@code "country.isoCode"}) and returns
-     * a {@link FieldAssert} for value-level assertions.
+     * Navigates to a field using dot-notation (e.g. {@code "country.isoCode"}) and runs
+     * {@code asserts} against a {@link FieldAssert} for value-level assertions. Returns
+     * {@code this} for chaining.
      *
      * <p>Navigation is tolerant — a missing intermediate node produces a {@code MissingNode}
      * and does not throw. The terminal assertion method on {@link FieldAssert} is what fails.
      */
-    public FieldAssert field(String dotPath) {
+    public BodyAssert field(String dotPath, Consumer<FieldAssert> asserts) {
         isNotNull();
         JsonNode node = navigate(dotPath);
-        return new FieldAssert(node, this, dotPath);
+        asserts.accept(new FieldAssert(node, dotPath));
+        return this;
     }
 
     /**

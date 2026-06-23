@@ -5,6 +5,7 @@ import io.leadex.aqa.model.ApiResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.assertj.core.api.AbstractAssert;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 /**
  * Generic AssertJ base class for {@link ApiResponse} assertions.
@@ -37,8 +38,11 @@ public abstract class AbstractApiResponseAssert<SELF extends AbstractApiResponse
     }
 
     /**
-     * Parses the raw JSON response body and returns a {@link BodyAssert} for fluent
-     * field-level and contract assertions.
+     * Parses the raw JSON response body and runs {@code asserts} against a {@link BodyAssert}
+     * for fluent field-level and contract assertions. Returns {@code myself} for chaining.
+     *
+     * <p>Running the assertions inside the lambda scope makes the body block a collapsible
+     * Allure step that nests its field/contract children.
      *
      * <p>The raw body is parsed at most once per assert instance — subsequent calls reuse
      * the cached {@link JsonNode}.
@@ -46,7 +50,7 @@ public abstract class AbstractApiResponseAssert<SELF extends AbstractApiResponse
      * <p>Schema and snapshot validation are available on {@link BodyAssert} and always
      * target the full original response JSON.
      */
-    public BodyAssert body() {
+    public SELF body(Consumer<BodyAssert> asserts) {
         isNotNull();
 
         if (actual.rawBody().isBlank()) {
@@ -66,6 +70,7 @@ public abstract class AbstractApiResponseAssert<SELF extends AbstractApiResponse
             );
         }
 
-        return BodyAssert.of(parsedBody, actual.rawBody());
+        asserts.accept(BodyAssert.of(parsedBody, actual.rawBody()));
+        return myself;
     }
 }

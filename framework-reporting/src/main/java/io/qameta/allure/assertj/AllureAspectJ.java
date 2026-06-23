@@ -149,7 +149,7 @@ public class AllureAspectJ {
         final String methodName = methodSignature.getName();
         final Object[] args = joinPoint.getArgs();
 
-        if (shouldSkip(methodName)) {
+        if (shouldSkip(methodName, args)) {
             skipDepth.set(getSkipDepth() + 1);
             return;
         }
@@ -204,12 +204,24 @@ public class AllureAspectJ {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private boolean shouldSkip(final String methodName) {
-        return methodName.equals("isNotNull")
-                || methodName.equals("assertThat")
-                || methodName.equals("body")
-                || methodName.equals("first")
-                || methodName.equals("at");
+    /*
+     * Signature-aware skip:
+     *  - isNotNull / assertThat are always navigation/internal noise → always skipped.
+     *  - body / first / at are skipped ONLY when they carry no trailing Consumer arg. This
+     *    keeps Splunk's no-arg first() step-less (it must never blanket-removed from the skip
+     *    list) while letting the new lambda-scoped grouping overloads emit a real, balanced
+     *    step whose field/contract children nest inside it.
+     */
+    private boolean shouldSkip(final String methodName, final Object[] args) {
+        if (methodName.equals("isNotNull") || methodName.equals("assertThat")) {
+            return true;
+        }
+        final boolean hasConsumer = args.length > 0
+                && args[args.length - 1] instanceof java.util.function.Consumer;
+        if (methodName.equals("body") || methodName.equals("first") || methodName.equals("at")) {
+            return !hasConsumer;
+        }
+        return false;
     }
 
     private String prettify(final String methodName, final Object[] args) {
@@ -228,6 +240,11 @@ public class AllureAspectJ {
             case "isNotEmpty" -> "not empty";
             case "matchesSchema" -> "matches schema";
             case "matchesSnapshot" -> "matches snapshot";
+            // Lambda-scoped grouping methods: trailing Consumer arg ignored, name from args[0].
+            case "field" -> "field '" + args[0] + "'";
+            case "body"  -> "body";
+            case "first" -> "first";
+            case "at"    -> "at[" + args[0] + "]";
             default           -> null;
         };
     }

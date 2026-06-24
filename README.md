@@ -68,10 +68,10 @@ public class PostmanEchoIntegrationTest extends BaseApiTest {
 
         ApiResponseAssert.assertThat(response)
                 .hasStatus(200)
-                .body()
-                    .field("args.suite").hasValue("integration")
-                .matchesSchema("schemas/postman-echo-get.schema.json")
-                .matchesSnapshot("postman-echo-get");
+                .body(b -> b
+                        .field("args.suite", f -> f.hasValue("integration"))
+                        .matchesSchema("schemas/postman-echo-get.schema.json")
+                        .matchesSnapshot("postman-echo-get"));
     }
 }
 ```
@@ -87,14 +87,20 @@ Entry point: `ApiResponseAssert.assertThat(response)`.
 
 | Class | Role |
 |-------|------|
-| `ApiResponseAssert<T>` | Entry point. `hasStatus(int)` → `body()`. |
+| `ApiResponseAssert<T>` | Entry point. `hasStatus(int)`, `body(Consumer<BodyAssert>)`. Both return `SELF`. |
 | `AbstractApiResponseAssert` | Parses `rawBody` once (lazy-cached `JsonNode`). |
-| `BodyAssert` | `isNotEmpty()`, `at(int)`, `first()`, `field(dotPath)`, `hasField(dotPath)`, `matchesSchema(path)`, `matchesSnapshot(name)`. |
-| `FieldAssert` | Terminal assertions: `hasValue(Object)`, `isNotBlank()`, `isNotEmpty()`, `isPresent()`. All return `BodyAssert` for chaining. |
+| `BodyAssert` | `isNotEmpty()`, `hasField(dotPath)`, `matchesSchema(path)`, `matchesSnapshot(name)`, plus lambda-scoped navigation: `field(dotPath, Consumer<FieldAssert>)`, `at(int, Consumer<BodyAssert>)`, `first(Consumer<BodyAssert>)`. All return `BodyAssert`. |
+| `FieldAssert` | Terminal assertions: `hasValue(Object)`, `isNotBlank()`, `isNotEmpty()`, `isPresent()`. All return `this` (`FieldAssert`), so several checks chain per field inside the consumer (`f -> f.isNotBlank().hasValue(x)`). |
 
-Chain: `.body()` → `BodyAssert` → `.field("x")` → `FieldAssert` → `.hasValue(...)` → `BodyAssert` → `.matchesSchema(...)` → `BodyAssert`.
+Navigation is **lambda-scoped**: `field`/`at`/`first` take a `Consumer` and run their assertions inside their own execution window, so the Allure report nests steps — `body > field 'Code' > hasValue '0'` — instead of rendering siblings. Example:
 
-`.matchesSchema()` and `.matchesSnapshot()` always validate the **full original `rawBody`**, regardless of cursor depth. Both are only on `BodyAssert` — calling them on `FieldAssert` is a compile error by design.
+```java
+.body(b -> b
+        .field("Code",    f -> f.hasValue(0))
+        .at(0, el -> el.field("name", f -> f.isNotBlank())));
+```
+
+`.matchesSchema()` and `.matchesSnapshot()` always validate the **full original `rawBody`**, regardless of cursor depth. Both are only on `BodyAssert` — they are absent from `FieldAssert` by design.
 
 ## Environment variables
 

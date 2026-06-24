@@ -88,8 +88,20 @@ public class AllureAspectJ {
     public void proxyMethod() {
     }
 
-    /** Matches all public assertion methods on AbstractAssert subclasses, excluding proxy setup. */
-    @Pointcut("execution(public * org.assertj.core.api.AbstractAssert+.*(..)) && !proxyMethod()")
+    /**
+     * Matches all public assertion methods on AbstractAssert subclasses, excluding proxy setup
+     * and jsonunit's own fluent API.
+     *
+     * <p>{@code net.javacrumbs.jsonunit.assertj.ConfigurableJsonAssert} extends AssertJ's
+     * {@code AbstractAssert}, so without the {@code !within} clause the aspect intercepts
+     * jsonunit's internal {@code when()}/{@code withConfiguration()}/{@code isEqualTo()} calls
+     * made by {@code SnapshotContractValidator}, leaking them as ugly sub-steps under
+     * {@code matches snapshot} (including a raw {@code Lambda@...} toString). jsonunit assertions
+     * are framework-internal, never user-authored, so excluding the package keeps
+     * {@code matches snapshot} a clean leaf. No user-facing DSL routes through jsonunit.
+     */
+    @Pointcut("execution(public * org.assertj.core.api.AbstractAssert+.*(..)) "
+            + "&& !proxyMethod() && !within(net.javacrumbs.jsonunit..*)")
     public void anyAssert() {
     }
 
@@ -149,7 +161,7 @@ public class AllureAspectJ {
         final String methodName = methodSignature.getName();
         final Object[] args = joinPoint.getArgs();
 
-        if (shouldSkip(methodName)) {
+        if (shouldSkip(methodName, args)) {
             skipDepth.set(getSkipDepth() + 1);
             return;
         }
@@ -204,12 +216,24 @@ public class AllureAspectJ {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private boolean shouldSkip(final String methodName) {
-        return methodName.equals("isNotNull")
-                || methodName.equals("assertThat")
-                || methodName.equals("body")
-                || methodName.equals("first")
-                || methodName.equals("at");
+    /*
+     * Signature-aware skip:
+     *  - isNotNull / assertThat are always navigation/internal noise → always skipped.
+     *  - body / first / at are skipped ONLY when they carry no trailing Consumer arg. This
+     *    keeps Splunk's no-arg first() step-less (it must never blanket-removed from the skip
+     *    list) while letting the new lambda-scoped grouping overloads emit a real, balanced
+     *    step whose field/contract children nest inside it.
+     */
+    private boolean shouldSkip(final String methodName, final Object[] args) {
+        if (methodName.equals("isNotNull") || methodName.equals("assertThat")) {
+            return true;
+        }
+        final boolean hasConsumer = args.length > 0
+                && args[args.length - 1] instanceof java.util.function.Consumer;
+        if (methodName.equals("body") || methodName.equals("first") || methodName.equals("at")) {
+            return !hasConsumer;
+        }
+        return false;
     }
 
     private String prettify(final String methodName, final Object[] args) {
@@ -228,6 +252,11 @@ public class AllureAspectJ {
             case "isNotEmpty" -> "not empty";
             case "matchesSchema" -> "matches schema";
             case "matchesSnapshot" -> "matches snapshot";
+            // Lambda-scoped grouping methods: trailing Consumer arg ignored, name from args[0].
+            case "field" -> "field '" + args[0] + "'";
+            case "body"  -> "body";
+            case "first" -> "first";
+            case "at"    -> "at[" + args[0] + "]";
             default           -> null;
         };
     }

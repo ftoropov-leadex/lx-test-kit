@@ -4,30 +4,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.assertj.core.api.AbstractAssert;
 
 /**
- * Fluent value-level assertions for a single JSON field reached via
- * {@link BodyAssert#field(String)}.
+ * Fluent value-level assertions for a single JSON field, scoped inside the
+ * {@code field(path, f -> ...)} consumer on {@link BodyAssert}.
  *
  * <p>All public methods are intercepted by {@code AllureAspectJ} via LTW — no manual
  * {@code Allure.step()} calls are needed.
  *
- * <p><b>Navigation-tolerant, validation-strict:</b> {@link BodyAssert#field(String)} never
- * throws — it always produces a {@code FieldAssert} even when the field is absent. Each
+ * <p><b>Navigation-tolerant, validation-strict:</b> {@link BodyAssert#field(String, java.util.function.Consumer)}
+ * never throws — it always produces a {@code FieldAssert} even when the field is absent. Each
  * terminal method here owns its missing-node semantics and fails with a field-specific message.
  *
- * <p>Terminal methods return the parent {@link BodyAssert} to allow further field assertions
- * or contract validation to be chained without an explicit {@code .end()} call.
+ * <p>Terminal methods return {@code this} so multiple assertions can be chained on the same
+ * field inside the consumer (e.g. {@code f -> f.isNotBlank().hasValue(x)}).
  *
  * <p>{@code matchesSchema} / {@code matchesSnapshot} are intentionally absent — they live
  * on {@link BodyAssert} only and always validate the full response.
  */
 public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
 
-    private final BodyAssert parent;
     private final String path;
 
-    FieldAssert(JsonNode value, BodyAssert parent, String path) {
+    FieldAssert(JsonNode value, String path) {
         super(value, FieldAssert.class);
-        this.parent = parent;
         this.path = path;
     }
 
@@ -36,14 +34,14 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
     /**
      * Asserts the field exists and is non-null.
      */
-    public BodyAssert isPresent() {
+    public FieldAssert isPresent() {
         if (actual.isMissingNode()) {
             failWithMessage("Expected field '%s' to be non-null but field was missing", path);
         }
         if (actual.isNull()) {
             failWithMessage("Expected field '%s' to be non-null but was null", path);
         }
-        return parent;
+        return this;
     }
 
     /**
@@ -53,7 +51,7 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
      * {@code Double}/{@code double}, and {@code Boolean}/{@code boolean} comparisons via
      * type-aware extraction from the {@link JsonNode}.
      */
-    public BodyAssert hasValue(Object expected) {
+    public FieldAssert hasValue(Object expected) {
         if (actual.isMissingNode()) {
             failWithMessage("Expected field '%s' to equal <%s> but field was missing", path, expected);
         }
@@ -61,14 +59,14 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
         if (!expected.equals(actualValue)) {
             failWithMessage("Expected field '%s' to equal <%s> but was <%s>", path, expected, actualValue);
         }
-        return parent;
+        return this;
     }
 
     /**
      * Asserts the field exists and its text value is non-blank (non-null, non-empty,
      * non-whitespace-only).
      */
-    public BodyAssert isNotBlank() {
+    public FieldAssert isNotBlank() {
         if (actual.isMissingNode()) {
             failWithMessage("Expected field '%s' to be non-blank but field was missing", path);
         }
@@ -78,7 +76,7 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
         if (actual.asText().isBlank()) {
             failWithMessage("Expected field '%s' to be non-blank but was: '%s'", path, actual.asText());
         }
-        return parent;
+        return this;
     }
 
     /**
@@ -88,7 +86,7 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
      * For string fields: fails if the string is empty.
      * For null or missing fields: always fails.
      */
-    public BodyAssert isNotEmpty() {
+    public FieldAssert isNotEmpty() {
         if (actual.isMissingNode()) {
             failWithMessage("Expected field '%s' to be non-empty but field was missing", path);
         }
@@ -101,7 +99,7 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
         if (actual.isTextual() && actual.asText().isEmpty()) {
             failWithMessage("Expected field '%s' to be non-empty string but was empty", path);
         }
-        return parent;
+        return this;
     }
 
     // ── Internal ────────────────────────────────────────────────────────────

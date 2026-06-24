@@ -88,8 +88,20 @@ public class AllureAspectJ {
     public void proxyMethod() {
     }
 
-    /** Matches all public assertion methods on AbstractAssert subclasses, excluding proxy setup. */
-    @Pointcut("execution(public * org.assertj.core.api.AbstractAssert+.*(..)) && !proxyMethod()")
+    /**
+     * Matches all public assertion methods on AbstractAssert subclasses, excluding proxy setup
+     * and jsonunit's own fluent API.
+     *
+     * <p>{@code net.javacrumbs.jsonunit.assertj.ConfigurableJsonAssert} extends AssertJ's
+     * {@code AbstractAssert}, so without the {@code !within} clause the aspect intercepts
+     * jsonunit's internal {@code when()}/{@code withConfiguration()}/{@code isEqualTo()} calls
+     * made by {@code SnapshotContractValidator}, leaking them as ugly sub-steps under
+     * {@code matches snapshot} (including a raw {@code Lambda@...} toString). jsonunit assertions
+     * are framework-internal, never user-authored, so excluding the package keeps
+     * {@code matches snapshot} a clean leaf. No user-facing DSL routes through jsonunit.
+     */
+    @Pointcut("execution(public * org.assertj.core.api.AbstractAssert+.*(..)) "
+            + "&& !proxyMethod() && !within(net.javacrumbs.jsonunit..*)")
     public void anyAssert() {
     }
 

@@ -90,7 +90,8 @@ public final class BodyAssert extends AbstractAssert<BodyAssert, JsonNode> {
      * Asserts that the field at {@code dotPath} exists and is non-null.
      *
      * <p>Use this as an explicit structural check. For value assertions, use
-     * {@link #field(String)} followed by a terminal assertion on {@link FieldAssert}.
+     * {@link #field(String, java.util.function.Consumer)} and assert on the
+     * {@link FieldAssert} inside the consumer.
      */
     public BodyAssert hasField(String dotPath) {
         isNotNull();

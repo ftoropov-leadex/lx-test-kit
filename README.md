@@ -95,9 +95,19 @@ Entry point: `ApiResponseAssert.assertThat(response)`.
 Navigation is **lambda-scoped**: `field`/`at`/`first` take a `Consumer` and run their assertions inside their own execution window, so the Allure report nests steps — `body > field 'Code' > hasValue '0'` — instead of rendering siblings. Example:
 
 ```java
-.body(b -> b
-        .field("Code",    f -> f.hasValue(0))
-        .at(0, el -> el.field("name", f -> f.isNotBlank())));
+ApiResponseAssert.assertThat(response)
+        .body(b -> b
+                .field("Code",      f -> f.hasValue(0))
+                .field("user.name", f -> f.isNotBlank()));
+```
+
+Array roots guard with `isNotEmpty()` before `first`/`at`:
+
+```java
+ApiResponseAssert.assertThat(response)
+        .body(b -> b
+                .isNotEmpty()
+                .first(el -> el.field("name", f -> f.isNotBlank())));
 ```
 
 `.matchesSchema()` and `.matchesSnapshot()` always validate the **full original `rawBody`**, regardless of cursor depth. Both are only on `BodyAssert` — they are absent from `FieldAssert` by design.

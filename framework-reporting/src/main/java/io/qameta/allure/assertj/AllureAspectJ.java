@@ -57,18 +57,18 @@ public class AllureAspectJ {
             };
 
     /*
-     * Reentrant depth counter: incremented by stepStart when a method is in the skip list,
-     * decremented by stepStop/stepFailed. Using a counter (not a boolean) correctly handles
-     * nested skipped calls — e.g. body() calling isNotNull() internally, where both are in
-     * the skip list. A boolean would be cleared by the inner call's stepStop, causing the
-     * outer call's stepStop to proceed and attempt to close a step that was never opened.
+     * Per-call frame stack: stepStart pushes one Boolean for every intercepted assertion call —
+     * TRUE when the call was skipped (no step opened), FALSE when a real step was opened. stepStop
+     * and stepFailed pop the matching frame and act on it. AspectJ guarantees exactly one @Before
+     * and one @AfterReturning/@AfterThrowing per join point in strict LIFO order, so the stack stays
+     * balanced regardless of how skipped and non-skipped calls nest — e.g. a skipped first() whose
+     * body invokes a non-skipped isNotEmpty(). A single depth counter could not represent this: an
+     * inner non-skipped call would clobber the outer skipped call's pending state, causing the outer
+     * stepStop to close a step that was never opened (logged as "no step running" / test-uuid
+     * "step not found").
      */
-    private static final ThreadLocal<Integer> skipDepth = new ThreadLocal<>();
-
-    private static int getSkipDepth() {
-        final Integer v = skipDepth.get();
-        return v == null ? 0 : v;
-    }
+    private static final ThreadLocal<java.util.Deque<Boolean>> callStack =
+            ThreadLocal.withInitial(java.util.ArrayDeque::new);
 
     public static AllureLifecycle getLifecycle() {
         return lifecycle.get();
@@ -162,13 +162,11 @@ public class AllureAspectJ {
         final Object[] args = joinPoint.getArgs();
 
         if (shouldSkip(methodName, args)) {
-            skipDepth.set(getSkipDepth() + 1);
+            callStack.get().push(Boolean.TRUE);   // skipped — no step opened
             return;
         }
 
-        // Reset depth counter — clears any stale state left by a prior incomplete skip cycle
-        skipDepth.remove();
-
+        callStack.get().push(Boolean.FALSE);      // real step opened below
         final String uuid = UUID.randomUUID().toString();
         final String pretty = prettify(methodName, args);
         final String name = pretty != null
@@ -186,10 +184,7 @@ public class AllureAspectJ {
     /** Marks the current step as failed/broken when an assertion throws. */
     @AfterThrowing(pointcut = "anyAssert()", throwing = "e")
     public void stepFailed(final Throwable e) {
-        final int depth = getSkipDepth();
-        if (depth > 0) {
-            final int next = depth - 1;
-            if (next == 0) skipDepth.remove(); else skipDepth.set(next);
+        if (popSkipped()) {
             return;
         }
         getLifecycle().updateStep(s -> {
@@ -202,14 +197,21 @@ public class AllureAspectJ {
     /** Marks the current step as passed and closes it after a successful assertion. */
     @AfterReturning("anyAssert()")
     public void stepStop() {
-        final int depth = getSkipDepth();
-        if (depth > 0) {
-            final int next = depth - 1;
-            if (next == 0) skipDepth.remove(); else skipDepth.set(next);
+        if (popSkipped()) {
             return;
         }
         getLifecycle().updateStep(s -> s.setStatus(Status.PASSED));
         getLifecycle().stopStep();
+    }
+
+    /*
+     * Pops the frame pushed by the matching stepStart. Returns true when that call was skipped
+     * (no step to close). An empty stack means stepStart never ran for this join point — treat as
+     * skipped (return true) so we never close a step we did not open.
+     */
+    private static boolean popSkipped() {
+        final java.util.Deque<Boolean> stack = callStack.get();
+        return stack.isEmpty() || stack.pop();
     }
 
     // -------------------------------------------------------------------------

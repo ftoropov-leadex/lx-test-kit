@@ -36,23 +36,12 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
     }
 
     @Override
-    public void onTestSuccess(ITestResult result) {
-        attachTestLog();
-    }
-
-    @Override
     public void onTestFailure(ITestResult result) {
-        attachTestLog();
         attachRetryMetadata(result);
         if (result.getThrowable() != null) {
             Allure.addAttachment("Failure stacktrace", "text/plain",
                 stackTraceOf(result.getThrowable()), ".txt");
         }
-    }
-
-    @Override
-    public void onTestSkipped(ITestResult result) {
-        TestLogAppender.stopAndDrain();
     }
 
     // Writes environment.properties and (for local runs) executor.json to the Allure results directory
@@ -79,13 +68,6 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
             } catch (Exception e) {
                 // silent — executor.json is non-critical
             }
-        }
-    }
-
-    private void attachTestLog() {
-        String logs = TestLogAppender.stopAndDrain();
-        if (!logs.isBlank()) {
-            Allure.addAttachment("Test execution log", "text/plain", logs, ".log");
         }
     }
 

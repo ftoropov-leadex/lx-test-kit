@@ -1,7 +1,6 @@
 package io.leadex.aqa.reporting.allure;
 
 import io.leadex.aqa.config.EnvResolver;
-import io.leadex.aqa.testsupport.retry.FrameworkRetryAnalyzer;
 import io.qameta.allure.Allure;
 import io.restassured.RestAssured;
 import org.testng.ITestContext;
@@ -37,7 +36,6 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
 
     @Override
     public void onTestFailure(ITestResult result) {
-        attachRetryMetadata(result);
         if (result.getThrowable() != null) {
             Allure.addAttachment("Failure stacktrace", "text/plain",
                 stackTraceOf(result.getThrowable()), ".txt");
@@ -68,15 +66,6 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
             } catch (Exception e) {
                 // silent — executor.json is non-critical
             }
-        }
-    }
-
-    private void attachRetryMetadata(ITestResult result) {
-        Object retry = result.getAttribute(FrameworkRetryAnalyzer.RETRY_ATTEMPT_ATTRIBUTE);
-        Object reason = result.getAttribute(FrameworkRetryAnalyzer.RETRY_REASON_ATTRIBUTE);
-        if (retry != null || reason != null) {
-            Allure.addAttachment("Retry metadata",
-                "retryAttempt=" + retry + ", retryReason=" + reason);
         }
     }
 

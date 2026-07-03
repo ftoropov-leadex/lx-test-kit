@@ -1,5 +1,6 @@
 package io.leadex.aqa.reporting.allure;
 
+import io.leadex.aqa.testsupport.retry.FrameworkRetryAnalyzer;
 import io.qameta.allure.Allure;
 import io.qameta.allure.listener.TestLifecycleListener;
 import io.qameta.allure.model.TestResult;
@@ -24,6 +25,10 @@ public final class AllureLogAttachListener implements TestLifecycleListener {
         String logs = TestLogAppender.stopAndDrain();
         if (!logs.isBlank()) {
             Allure.addAttachment("Test execution log", "text/plain", logs, ".log");
+        }
+        String retryMetadata = FrameworkRetryAnalyzer.drainMetadata();
+        if (retryMetadata != null) {
+            Allure.addAttachment("Retry metadata", retryMetadata);
         }
     }
 }

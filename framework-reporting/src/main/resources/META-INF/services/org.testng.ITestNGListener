@@ -1,2 +1,1 @@
 io.leadex.aqa.reporting.allure.AllureTestNgListener
-io.leadex.aqa.testsupport.retry.RetryAnnotationTransformer

@@ -18,6 +18,11 @@ public final class FrameworkRetryAnalyzer implements IRetryAnalyzer {
     public static final String RETRY_ATTEMPT_ATTRIBUTE = "framework.retry.attempt";
     public static final String RETRY_REASON_ATTRIBUTE  = "framework.retry.reason";
 
+    // Bridges retry metadata to the Allure lifecycle bus: retry() runs on the test thread before the
+    // attempt's stopTestCase, so AllureLogAttachListener.beforeTestStop can drain it into the result
+    // deterministically — off the (unordered) TestNG listener bus that made late attachments orphan-prone.
+    private static final ThreadLocal<String> METADATA = new ThreadLocal<>();
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameworkRetryAnalyzer.class);
 
     private static final int         MAX_RETRIES = EnvResolver.integer("FRAMEWORK_RETRY_COUNT", 0);
@@ -33,17 +38,20 @@ public final class FrameworkRetryAnalyzer implements IRetryAnalyzer {
         Throwable failure = result.getThrowable();
         if (!shouldRetry(failure)) {
             result.setAttribute(RETRY_REASON_ATTRIBUTE, "non-retryable failure");
+            recordMetadata(null, "non-retryable failure");
             return false;
         }
         if (failedAttemptCount >= MAX_RETRIES) {
             result.setAttribute(RETRY_REASON_ATTRIBUTE, "retry limit reached");
+            recordMetadata(null, "retry limit reached");
             return false;
         }
 
         failedAttemptCount++;
+        String reason = failure == null ? "unknown" : failure.getClass().getSimpleName();
         result.setAttribute(RETRY_ATTEMPT_ATTRIBUTE, failedAttemptCount);
-        result.setAttribute(RETRY_REASON_ATTRIBUTE,
-            failure == null ? "unknown" : failure.getClass().getSimpleName());
+        result.setAttribute(RETRY_REASON_ATTRIBUTE, reason);
+        recordMetadata(failedAttemptCount, reason);
 
         LOGGER.warn("Retrying test {}. Attempt {} of {}",
             result.getName(), failedAttemptCount, MAX_RETRIES);
@@ -52,6 +60,17 @@ public final class FrameworkRetryAnalyzer implements IRetryAnalyzer {
             LockSupport.parkNanos(DELAY_MS * 1_000_000L);
         }
         return true;
+    }
+
+    private static void recordMetadata(Object attempt, String reason) {
+        METADATA.set("retryAttempt=" + attempt + ", retryReason=" + reason);
+    }
+
+    /** Drains retry metadata for the current thread, or {@code null} if none was recorded. */
+    public static String drainMetadata() {
+        String metadata = METADATA.get();
+        METADATA.remove();
+        return metadata;
     }
 
     private boolean shouldRetry(Throwable failure) {

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lx-test-kit — Documentation</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --heading: #f0f6fc;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --accent-dim: #1f6feb;
+    --card-hover-border: #58a6ff;
+    --radius: 8px;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── header ── */
+  .header {
+    text-align: center;
+    padding: 64px 24px 48px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--heading);
+    letter-spacing: -0.4px;
+    margin-bottom: 12px;
+  }
+  .header .subtitle {
+    color: var(--text-muted);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .header .subtitle code {
+    background: #343941;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: #c9d1d9;
+  }
+
+  /* ── cards ── */
+  .cards {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card:hover {
+    border-color: var(--card-hover-border);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.12);
+  }
+  .card h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--heading);
+    letter-spacing: -0.2px;
+  }
+  .card h2 .icon {
+    margin-right: 8px;
+    font-size: 20px;
+  }
+  .card p {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .card .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(31, 111, 235, 0.15);
+    padding: 2px 8px;
+    border-radius: 4px;
+    align-self: flex-start;
+  }
+
+  /* ── footer ── */
+  .footer {
+    margin-top: auto;
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>lx-test-kit — Documentation</h1>
+  <p class="subtitle">
+    Rest API testing framework. Consumer projects depend on the published Maven artifact
+    <code>systems.leadex.lxtestkit:framework-bundle</code> and contain only tests,
+    test data, and CI configuration.
+  </p>
+</div>
+
+<div class="cards">
+
+  <a class="card" href="developerRepo-GETTING_STARTED_final.html">
+    <h2><span class="icon">🏗️</span> Getting Started — Framework Repository</h2>
+    <p>Step-by-step setup for <code>lx-test-kit</code> itself — from a bare machine to publishing
+       a framework release. Covers cloning, building, architecture overview, local &amp; GitHub
+       Packages publishing, and troubleshooting.</p>
+    <span class="tag">developer guide</span>
+  </a>
+
+  <a class="card" href="lx-test-kit_DSL_Glossary_final.html">
+    <h2><span class="icon">📖</span> lx-test-kit DSL Glossary</h2>
+    <p>Complete reference for the API Response DSL and Splunk DSL. Every assertion method, query
+       builder, await operation, dot-notation path rules, and chain invariant — with type signatures
+       and usage examples.</p>
+    <span class="tag">API reference</span>
+  </a>
+
+  <a class="card" href="consumerRepo-GETTING_STARTED_final.html">
+    <h2><span class="icon">🧪</span> Getting Started — Consumer Repository</h2>
+    <p>Setup guide for test repositories that depend on lx-test-kit. Defining suites, endpoints,
+       environments, schemas, snapshots, and CI workflows — everything downstream from the
+       framework itself.</p>
+    <span class="tag">consumer guide</span>
+  </a>
+
+</div>
+
+<div class="footer">
+  lx-test-kit · <code>systems.leadex.lxtestkit</code>
+</div>
+
+</body>
+</html>

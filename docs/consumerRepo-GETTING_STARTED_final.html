@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting Started — A consumer repository</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --heading: #f0f6fc;
+    --accent: #58a6ff;
+    --accent-dim: #1f6feb;
+    --code-bg: #161b22;
+    --inline-code: #c9d1d9;
+    --inline-code-bg: #343941;
+    --blockquote-border: #3fb950;
+    --blockquote-bg: #0d2b12;
+    --table-stripe: #161b22;
+    --table-hover: #1c2129;
+    --warning: #d29922;
+    --warning-bg: #2b2200;
+    --danger: #f85149;
+    --success: #3fb950;
+    --radius: 6px;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── main container ── */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── header ── */
+  .doc-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--heading);
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .doc-header .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .doc-header .subtitle a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .doc-header .subtitle a:hover { text-decoration: underline; }
+  .doc-header .subtitle code {
+    background: var(--inline-code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .doc-header .subtitle strong { color: var(--heading); }
+
+  /* ── sections ── */
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-top: 36px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.2px;
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  p {
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  p:last-child { margin-bottom: 0; }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover { text-decoration: underline; }
+
+  strong { color: var(--heading); font-weight: 600; }
+
+  /* ── inline code ── */
+  :not(pre) > code {
+    background: var(--inline-code-bg);
+    color: var(--inline-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ── code blocks ── */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 12px 0 20px;
+    overflow-x: auto;
+    position: relative;
+  }
+  pre code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    display: block;
+  }
+  /* language tag */
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0;
+    right: 12px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--surface);
+    padding: 2px 8px;
+    border-radius: 0 0 4px 4px;
+    border: 1px solid var(--border);
+    border-top: none;
+  }
+
+  /* ── tables ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: var(--surface);
+    color: var(--heading);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--table-stripe); }
+  tr:hover td { background: var(--table-hover); }
+  td:first-child code {
+    background: none;
+    padding: 0;
+    font-weight: 600;
+    color: var(--heading);
+    white-space: nowrap;
+  }
+  td:nth-child(3) code {
+    background: none;
+    padding: 0;
+    color: var(--success);
+    white-space: nowrap;
+  }
+
+  /* ── blockquotes ── */
+  blockquote {
+    border-left: 3px solid var(--blockquote-border);
+    background: var(--blockquote-bg);
+    padding: 10px 16px;
+    margin: 12px 0 20px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--text);
+    font-size: 14px;
+  }
+  blockquote p { margin: 0; }
+  blockquote strong { color: var(--success); }
+
+  /* ── lists ── */
+  ul, ol {
+    margin: 8px 0 16px;
+    padding-left: 24px;
+  }
+  li {
+    margin-bottom: 6px;
+  }
+  li:last-child { margin-bottom: 0; }
+  li > pre { margin-top: 8px; }
+
+  /* ── horizontal rules ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* ── step number badges ── */
+  .step-num {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--heading);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 2px 9px;
+    border-radius: 12px;
+    margin-right: 6px;
+  }
+
+  /* ── option labels ── */
+  .opt-label {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── quick-ref table ── */
+  .quick-ref td:first-child { white-space: nowrap; font-weight: 600; color: var(--heading); }
+
+  /* ── footer ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* ── scrollbar ── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── syntax highlighting tokens ── */
+  .tok-kw   { color: #ff7b72; }   /* keywords */
+  .tok-str  { color: #a5d6ff; }   /* strings */
+  .tok-cmt  { color: #8b949e; font-style: italic; } /* comments */
+  .tok-fn   { color: #d2a8ff; }   /* functions */
+  .tok-var  { color: #79c0ff; }   /* variables */
+  .tok-num  { color: #79c0ff; }   /* numbers */
+  .tok-op   { color: #ff7b72; }   /* operators */
+  .tok-prop { color: #79c0ff; }   /* properties */
+  .tok-url  { color: #a5d6ff; }   /* URLs */
+  .tok-val  { color: #7ee787; }   /* values / placeholders */
+  .tok-path { color: #d2a8ff; }   /* paths */
+  .tok-cmd  { color: #7ee787; }   /* command names */
+  .tok-opt  { color: #79c0ff; }   /* flags / options */
+  .tok-punc { color: #c9d1d9; }
+
+  /* ── home link ── */
+  .home-link {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    text-decoration: none;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: border-color 0.15s, color 0.15s;
+    margin-bottom: 16px;
+  }
+  .home-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <a href="index.html" class="home-link">← Home</a>
+
+  <!-- ── header ── -->
+  <div class="doc-header">
+    <h1>Getting Started — A consumer repository</h1>
+    <p class="subtitle">
+      Step-by-step setup, from a bare machine to a green test run. This repo holds <strong>tests</strong>;
+      the framework (HTTP client, assertion DSL, Allure reporting, retry, TestNG listeners) ships as the
+      published Maven artifact <a href="https://github.com/ftoropov-leadex/lx-test-kit"><code>lx-test-kit</code></a>
+      (<code>systems.leadex.lxtestkit:framework-bundle</code>).
+    </p>
+    <p class="subtitle">
+      For the conceptual map of the layout and CI, see <a href="README.md">README.md</a>. This doc is the linear
+      "do these steps in order" path.
+    </p>
+  </div>
+
+  <!-- ════════════ 0. Prerequisites ════════════ -->
+  <h2><span class="step-num">0</span> Prerequisites</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tool</th><th>Requirement</th><th>Check</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>JDK</code></td>
+          <td><strong>21</strong> (toolchain auto-detects; <code>JAVA_HOME</code> or IntelliJ Gradle JVM must point at a 21)</td>
+          <td><code>java -version</code></td>
+        </tr>
+        <tr>
+          <td><code>Gradle</code></td>
+          <td>none — use the wrapper <code>./gradlew</code></td>
+          <td><code>./gradlew --version</code></td>
+        </tr>
+        <tr>
+          <td><code>Git</code></td>
+          <td>any recent</td>
+          <td><code>git --version</code></td>
+        </tr>
+        <tr>
+          <td><code>IDE</code></td>
+          <td>IntelliJ IDEA Community Edition (free tier) recommended</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>GitHub PAT</code></td>
+          <td>scope <strong><code>read:packages</code></strong> — needed to resolve <code>framework-bundle</code> from GitHub Packages</td>
+          <td><code>Verify in step 4</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Depending on the framework artifact location. e.g. in case with BaE project: the framework artifact is <strong>not</strong> on Maven Central. It resolves from
+  <code>https://maven.pkg.github.com/ftoropov-leadex/lx-test-kit</code>, which requires authentication even for
+  read — hence the PAT.</p>
+
+  <!-- ════════════ 1. Get the repo ════════════ -->
+  <h2><span class="step-num">1</span> Get the repo</h2>
+
+  <p><span class="opt-label">Option A</span> <strong>clone an existing repo:</strong></p>
+  <pre data-lang="sh"><code>git clone https://github.com/ftoropov-leadex/test-storage-bae.git
+cd test-storage-bae</code></pre>
+
+  <p><span class="opt-label">Option B</span> <strong>set up from scratch (no existing repo):</strong></p>
+  <ol>
+    <li>Create a new repository on GitHub.</li>
+    <li>Initialize it locally:
+      <pre data-lang="sh"><code>mkdir my-test-repo && cd my-test-repo
+git init</code></pre>
+    </li>
+    <li>Copy the Gradle build files (<code>build.gradle.kts</code>, <code>settings.gradle.kts</code>, <code>gradle.properties</code>), the <code>test-suites/</code> structure, and <code>.github/workflows/</code> from this guide's reference layout.</li>
+    <li>Commit and push.</li>
+  </ol>
+
+  <!-- ════════════ 2. One-time credentials setup ════════════ -->
+  <h2><span class="step-num">2</span> One-time credentials setup <span style="font-weight:400;color:var(--text-muted);font-size:14px;">(for local runs)</span></h2>
+
+  <p>Create <code>~/.gradle/gradle.properties</code> — <strong>outside</strong> this repo, never committed:</p>
+
+  <pre data-lang="properties"><code><span class="tok-prop">gpr.user</span><span class="tok-punc">=</span><span class="tok-val">&lt;github-username&gt;</span>
+<span class="tok-prop">gpr.token</span><span class="tok-punc">=</span><span class="tok-val">&lt;PAT-with-read:packages&gt;</span></code></pre>
+
+  <p><strong>macOS / Linux:</strong></p>
+  <pre data-lang="sh"><code><span class="tok-cmd">chmod</span> <span class="tok-num">600</span> <span class="tok-path">~/.gradle/gradle.properties</span></code></pre>
+
+  <p><strong>Windows (PowerShell):</strong></p>
+  <pre data-lang="powershell"><code><span class="tok-cmt"># Restrict access to the current user only</span>
+<span class="tok-cmd">icacls</span> <span class="tok-str">"$env:USERPROFILE\.gradle\gradle.properties"</span> <span class="tok-opt">/inheritance:r</span> <span class="tok-opt">/grant:r</span> <span class="tok-str">"$env:USERNAME:(R)"</span></code></pre>
+
+  <p>The credentials block in <a href="build.gradle.kts">build.gradle.kts</a> reads <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code>
+  env vars first (CI path), then falls back to these <code>gpr.user</code> / <code>gpr.token</code> properties (local path).</p>
+
+  <!-- ════════════ 3. Pin the framework version ════════════ -->
+  <h2><span class="step-num">3</span> Pin the framework version</h2>
+
+  <p><a href="gradle.properties">gradle.properties</a>:</p>
+
+  <pre data-lang="properties"><code><span class="tok-prop">lxtestkit.version</span><span class="tok-punc">=</span><span class="tok-num">1.0.5</span></code></pre>
+
+  <p>Every suite pulls <code>framework-bundle:${lxtestkit.version}</code> via
+  <a href="test-suites/build.gradle.kts">test-suites/build.gradle.kts</a>. Bump this one line when a new framework
+  version publishes, then Gradle-reload.</p>
+
+  <blockquote>
+    <p>See the actual framework version at <a href="gradle.properties">gradle.properties</a>.</p>
+  </blockquote>
+
+  <!-- ════════════ 4. Verify the toolchain resolves ════════════ -->
+  <h2><span class="step-num">4</span> Verify the toolchain resolves</h2>
+
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-opt">help</span></code></pre>
+
+  <p>Resolves dependencies and proves the PAT + Java 21 toolchain work, without running tests yet.
+  If this fails on <code>framework-bundle</code> resolution → re-check step 2 (PAT scope / <code>~/.gradle/gradle.properties</code>).</p>
+
+  <!-- ════════════ 5. Understand what one suite needs ════════════ -->
+  <h2><span class="step-num">5</span> Understand what one suite needs</h2>
+
+  <p>A suite (<code>test-suites/&lt;suite-name-example&gt;/</code>) is wired from four pieces:</p>
+
+  <ol>
+    <li>
+      <p><strong>Endpoint registry</strong> — <a href="test-suites/resources/domains.properties">test-suites/resources/domains.properties</a>:</p>
+      <pre data-lang="properties"><code><span class="tok-prop">api.endpoints.get-exampleByDate.method</span><span class="tok-punc">=</span><span class="tok-val">GET</span>
+<span class="tok-prop">api.endpoints.get-exampleByDate.reUrl</span><span class="tok-punc">=</span><span class="tok-str">/api/customer/search</span></code></pre>
+    </li>
+    <li>
+      <p><strong>TestNG suite XML</strong> — <code>src/test/resources/testng-&lt;suite-name&gt;.xml</code>. Listeners are declared on the
+      framework side; the suite XML only needs the test class list.</p>
+    </li>
+    <li>
+      <p><strong>Test class</strong> — extends <code>BaseApiTest</code>, declares <code>domain()</code>, calls <code>call("&lt;endpoint-id&gt;", …)</code> and
+      asserts with the lambda-scoped DSL.</p>
+    </li>
+    <li>
+      <p><strong>Schema + snapshot</strong> — <code>src/test/resources/schemas/*.schema.json</code> and <code>snapshots/*.json</code>, used by
+      <code>matchesSchema(...)</code> / <code>matchesSnapshot(...)</code>.</p>
+    </li>
+  </ol>
+
+  <p>Suite registration: <a href="settings.gradle.kts">settings.gradle.kts</a> auto-registers every suite dir that
+  has its own <code>build.gradle.kts</code>. Mirrors CI <code>find test-suites -name build.gradle.kts</code> discovery —
+  filesystem presence is the single source of truth. Drop a suite in, no settings edit needed.</p>
+
+  <!-- ════════════ 6. Set the runtime env vars ════════════ -->
+  <h2><span class="step-num">6</span> Set the runtime env vars</h2>
+
+  <p>The framework reads these at startup via <code>ConfigResolver</code>. For the full variable table, see
+  <a href="README.md#running-tests-locally">README.md</a>.</p>
+
+  <h3>For local runs</h3>
+
+  <p><strong>macOS / Linux (zsh/bash):</strong></p>
+  <pre data-lang="sh"><code><span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_ENV</span><span class="tok-punc">=</span><span class="tok-str">uat</span>
+<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_BASE_URL</span><span class="tok-punc">=</span><span class="tok-str">https://&lt;sandbox-host&gt;</span>
+<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_DOMAINS_PATH</span><span class="tok-punc">=</span><span class="tok-str">"$PWD/test-suites/resources/domains.properties"</span>
+<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_CLIENT_NAME</span><span class="tok-punc">=</span><span class="tok-val">&lt;client&gt;</span>
+<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_CLIENT_SECRET</span><span class="tok-punc">=</span><span class="tok-val">&lt;secret&gt;</span></code></pre>
+
+  <p><strong>Windows (cmd):</strong></p>
+  <pre data-lang="cmd"><code><span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_ENV</span><span class="tok-punc">=</span><span class="tok-str">uat</span>
+<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_BASE_URL</span><span class="tok-punc">=</span><span class="tok-str">https://&lt;sandbox-host&gt;</span>
+<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_DOMAINS_PATH</span><span class="tok-punc">=</span><span class="tok-str">%CD%\test-suites\resources\domains.properties</span>
+<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_CLIENT_NAME</span><span class="tok-punc">=</span><span class="tok-val">&lt;client&gt;</span>
+<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_CLIENT_SECRET</span><span class="tok-punc">=</span><span class="tok-val">&lt;secret&gt;</span></code></pre>
+
+  <h3>For CI (GitHub Actions)</h3>
+
+  <p>Variables and secrets are configured in the GitHub repository — no local <code>export</code> needed. See
+  <a href="README.md#configuration-sources">README.md</a> for the full list and where each lives (per-environment
+  variables, per-environment secrets, repository-level variables/secrets).</p>
+
+  <!-- ════════════ 7. Run tests ════════════ -->
+  <h2><span class="step-num">7</span> Run tests</h2>
+
+  <h3><span class="opt-label">Option 1</span> local (macOS / Linux)</h3>
+
+  <p>Whole suite:</p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-punc">:</span><span class="tok-path">test-suites</span><span class="tok-punc">:</span><span class="tok-var">&lt;suite-name&gt;</span><span class="tok-punc">:</span><span class="tok-fn">test</span></code></pre>
+
+  <p>Single test:</p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-punc">:</span><span class="tok-path">test-suites</span><span class="tok-punc">:</span><span class="tok-var">&lt;suite-name&gt;</span><span class="tok-punc">:</span><span class="tok-fn">test</span> <span class="tok-opt">--tests</span> <span class="tok-str">"&lt;fully.qualified.TestClass.testMethod&gt;"</span></code></pre>
+
+  <h3><span class="opt-label">Option 2</span> local (Windows)</h3>
+
+  <p>Same Gradle commands work in PowerShell / cmd — use <code>gradlew.bat</code> instead of <code>./gradlew</code>:</p>
+  <pre data-lang="cmd"><code><span class="tok-cmd">gradlew.bat</span> <span class="tok-punc">:</span><span class="tok-path">test-suites</span><span class="tok-punc">:</span><span class="tok-var">&lt;suite-name&gt;</span><span class="tok-punc">:</span><span class="tok-fn">test</span></code></pre>
+
+  <blockquote>
+    <p><strong>Important:</strong> Always run tests through Gradle (<code>./gradlew test</code> or <code>gradlew.bat test</code>). The
+    <code>test</code> task injects the <code>aspectjweaver</code> as a JVM <code>-javaagent</code> in its <code>doFirst</code>, which enables
+    AspectJ load-time weaving. Running through IntelliJ's native TestNG runner bypasses this.</p>
+  </blockquote>
+
+  <h3><span class="opt-label">Option 3</span> CI (GitHub Actions)</h3>
+
+  <p>Trigger a workflow dispatch run — see section 9 below and <a href="README.md#ci">README.md</a>.</p>
+
+  <!-- ════════════ 8. Generate the Allure report ════════════ -->
+  <h2><span class="step-num">8</span> Generate the Allure report</h2>
+
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-fn">allureReportWithTests</span>
+<span class="tok-cmd">./gradlew</span> <span class="tok-fn">allureServe</span></code></pre>
+
+  <p><code>allureReportWithTests</code> runs every suite (<code>runSuitesForAllure</code>), aggregates each suite's
+  <code>allure-results</code> into a single report, and carries trend <code>history/</code> forward. The <code>allureReport</code> task
+  auto-clears the stale report dir on re-run (its <code>doFirst</code>), so repeated local runs don't hit Allure's
+  "target directory already in use" error.</p>
+
+  <p>You <strong>cannot</strong> open Allure's <code>index.html</code> directly — it requires a local HTTP server.
+  <code>./gradlew allureServe</code> starts one and opens the report in your browser automatically.</p>
+
+  <!-- ════════════ 9. (CI) Run it on demand ════════════ -->
+  <h2><span class="step-num">9</span> (CI) Run it on demand</h2>
+
+  <p>CI is <code>workflow_dispatch</code> only — <code>.github/workflows/runTests.yml</code>. Trigger a run, pick <code>environment</code>
+  and <code>suites</code>; the <code>report</code> job aggregates all suites into one Allure report and (when <code>publish_report</code>)
+  deploys to cloud web-hosting.</p>
+
+  <h3>Setting up the CI workflow</h3>
+
+  <ol>
+    <li><strong>Create GitHub Environments</strong> (Settings → Environments) for each target env (e.g. <code>uat</code>, <code>preprod</code>).</li>
+    <li><strong>Populate per-environment secrets</strong> (<code>FRAMEWORK_CLIENT_NAME</code>, <code>FRAMEWORK_CLIENT_SECRET</code>).</li>
+    <li><strong>Populate per-environment variables</strong> (timeouts, retry config).</li>
+    <li><strong>Add repository-level secrets</strong> (<code>PACKAGES_READ_TOKEN</code> for framework resolution, cloud hosting API token).</li>
+    <li><strong>Add repository-level variables</strong> (base URLs per env, timeouts, etc.).</li>
+    <li><strong>Edit <code>runTests.yml</code></strong> to add new environments to the <code>environment</code> input's <code>options</code> list and extend the base-URL selection expression.</li>
+  </ol>
+
+  <p>Full input/job/variable reference: <a href="README.md#ci">README.md</a>.</p>
+
+  <!-- ════════════ Quick reference ════════════ -->
+  <h2>Quick reference — add more</h2>
+
+  <div class="table-wrap">
+    <table class="quick-ref">
+      <thead><tr><th>Goal</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>New endpoint in a suite</td>
+          <td>add to <code>domains.properties</code> + test method + schema/snapshot — <a href="README.md#adding-a-new-endpoint-to-an-existing-suite">README.md</a></td>
+        </tr>
+        <tr>
+          <td>New suite</td>
+          <td>drop a <code>build.gradle.kts</code> + <code>testng-&lt;suite&gt;.xml</code> under <code>test-suites/</code> — auto-registered by filesystem — <a href="README.md#adding-a-new-suite">README.md</a></td>
+        </tr>
+        <tr>
+          <td>New environment</td>
+          <td>GitHub Environment + vars/secrets + base URL + <code>runTests.yml</code> edit — <a href="README.md#adding-a-new-environment">README.md</a></td>
+        </tr>
+        <tr>
+          <td>Update framework version</td>
+          <td><code>gradle.properties</code> → <code>lxtestkit.version</code>, then Gradle reload</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── footer ── -->
+  <div class="footer">
+    consumerRepo-GETTING_STARTED.md &nbsp;·&nbsp; rendered at project root
+  </div>
+
+</div>
+</body>
+</html>

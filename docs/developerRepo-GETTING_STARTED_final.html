@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting Started — the Framework Repository</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --heading: #f0f6fc;
+    --accent: #58a6ff;
+    --accent-dim: #1f6feb;
+    --code-bg: #161b22;
+    --inline-code: #c9d1d9;
+    --inline-code-bg: #343941;
+    --blockquote-border: #3fb950;
+    --blockquote-bg: #0d2b12;
+    --table-stripe: #161b22;
+    --table-hover: #1c2129;
+    --warning: #d29922;
+    --warning-bg: #2b2200;
+    --danger: #f85149;
+    --success: #3fb950;
+    --radius: 6px;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── main container ── */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── header ── */
+  .doc-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--heading);
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .doc-header .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .doc-header .subtitle a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .doc-header .subtitle a:hover { text-decoration: underline; }
+  .doc-header .subtitle code {
+    background: var(--inline-code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .doc-header .subtitle strong { color: var(--heading); }
+
+  /* ── sections ── */
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-top: 36px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.2px;
+  }
+  h2[id] { scroll-margin-top: 60px; }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  p {
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  p:last-child { margin-bottom: 0; }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover { text-decoration: underline; }
+
+  strong { color: var(--heading); font-weight: 600; }
+
+  /* ── inline code ── */
+  :not(pre) > code {
+    background: var(--inline-code-bg);
+    color: var(--inline-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ── code blocks ── */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 12px 0 20px;
+    overflow-x: auto;
+    position: relative;
+  }
+  pre code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    display: block;
+  }
+  /* language tag */
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0;
+    right: 12px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--surface);
+    padding: 2px 8px;
+    border-radius: 0 0 4px 4px;
+    border: 1px solid var(--border);
+    border-top: none;
+  }
+
+  /* ── tables ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: var(--surface);
+    color: var(--heading);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--table-stripe); }
+  tr:hover td { background: var(--table-hover); }
+  td:first-child code {
+    background: none;
+    padding: 0;
+    font-weight: 600;
+    color: var(--heading);
+    white-space: nowrap;
+  }
+
+  /* ── blockquotes ── */
+  blockquote {
+    border-left: 3px solid var(--blockquote-border);
+    background: var(--blockquote-bg);
+    padding: 10px 16px;
+    margin: 12px 0 20px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--text);
+    font-size: 14px;
+  }
+  blockquote p { margin: 0; }
+  blockquote strong { color: var(--success); }
+  blockquote.warn {
+    border-left-color: var(--warning);
+    background: var(--warning-bg);
+  }
+  blockquote.warn strong { color: var(--warning); }
+
+  /* ── lists ── */
+  ul, ol {
+    margin: 8px 0 16px;
+    padding-left: 24px;
+  }
+  li {
+    margin-bottom: 6px;
+  }
+  li:last-child { margin-bottom: 0; }
+  li > pre { margin-top: 8px; }
+
+  /* ── horizontal rules ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* ── step number badges ── */
+  .step-num {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--heading);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 2px 9px;
+    border-radius: 12px;
+    margin-right: 6px;
+  }
+
+  /* ── quick-ref table ── */
+  .quick-ref td:first-child { white-space: nowrap; font-weight: 600; color: var(--heading); }
+
+  /* ── footer ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* ── scrollbar ── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── syntax highlighting tokens ── */
+  .tok-kw   { color: #ff7b72; }   /* keywords */
+  .tok-str  { color: #a5d6ff; }   /* strings */
+  .tok-cmt  { color: #8b949e; font-style: italic; } /* comments */
+  .tok-fn   { color: #d2a8ff; }   /* functions */
+  .tok-var  { color: #79c0ff; }   /* variables */
+  .tok-num  { color: #79c0ff; }   /* numbers */
+  .tok-op   { color: #ff7b72; }   /* operators */
+  .tok-prop { color: #79c0ff; }   /* properties */
+  .tok-val  { color: #7ee787; }   /* values / placeholders */
+  .tok-path { color: #d2a8ff; }   /* paths */
+  .tok-cmd  { color: #7ee787; }   /* command names */
+  .tok-opt  { color: #79c0ff; }   /* flags / options */
+  .tok-punc { color: #c9d1d9; }
+
+  /* ── home link ── */
+  .home-link {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    text-decoration: none;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: border-color 0.15s, color 0.15s;
+    margin-bottom: 16px;
+  }
+  .home-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <a href="index.html" class="home-link">← Home</a>
+
+  <!-- ── header ── -->
+  <div class="doc-header">
+    <h1>Getting Started — the Framework Repository</h1>
+    <p class="subtitle">
+      Step-by-step setup, from a bare machine to publishing a framework release. This repository
+      (<code>lx-test-kit</code>) holds the reusable REST API testing framework. Consumer projects
+      depend on the published Maven artifact <code>systems.leadex.lxtestkit:framework-bundle</code> and
+      contain only tests, test data and CI configuration.
+    </p>
+    <p class="subtitle">
+      For the conceptual overview of the architecture, see <a href="README.md">README.md</a>. This doc
+      is the linear "do these steps in order" path.
+    </p>
+  </div>
+
+  <!-- ════════════ 0. Prerequisites ════════════ -->
+  <h2 id="s0"><span class="step-num">0</span> Prerequisites</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Tool</th><th>Requirement</th><th>Check</th></tr></thead>
+    <tbody>
+      <tr><td><code>JDK</code></td><td><strong>21</strong> (toolchain auto-detects; <code>JAVA_HOME</code> or IntelliJ Gradle JVM must point at Java 21)</td><td><code>java -version</code></td></tr>
+      <tr><td><code>Gradle</code></td><td>none — use the wrapper <code>./gradlew</code></td><td><code>./gradlew --version</code></td></tr>
+      <tr><td><code>Git</code></td><td>any recent version</td><td><code>git --version</code></td></tr>
+      <tr><td><code>GitHub PAT</code></td><td>scope <strong><code>write:packages</code></strong> — required only to <em>publish</em> framework artifacts</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    The framework resolves all of its own dependencies from <strong>Maven Central</strong> (the root
+    build declares <code>mavenCentral()</code> only), so building and testing locally needs <em>no</em>
+    GitHub authentication. A PAT is required only when publishing releases (step 13).
+  </p>
+
+  <!-- ════════════ 1. Clone the repository ════════════ -->
+  <h2 id="s1"><span class="step-num">1</span> Clone the repository</h2>
+  <pre data-lang="sh"><code><span class="tok-cmd">git</span> <span class="tok-kw">clone</span> <span class="tok-str">https://github.com/ftoropov-leadex/lx-test-kit.git</span>
+<span class="tok-cmd">cd</span> <span class="tok-path">lx-test-kit</span></code></pre>
+  <p>
+    A Gradle multi-module project. No additional setup is required before opening it in an IDE.
+  </p>
+
+  <!-- ════════════ 2. Configure GitHub Packages credentials ════════════ -->
+  <h2 id="s2"><span class="step-num">2</span> Configure GitHub Packages credentials</h2>
+  <p>
+    Only needed for publishing. Create <code>~/.gradle/gradle.properties</code> —
+    <strong>outside</strong> this repository, never committed:
+  </p>
+  <pre data-lang="properties"><code><span class="tok-prop">gpr.user</span><span class="tok-punc">=</span><span class="tok-val">&lt;github-username&gt;</span>
+<span class="tok-prop">gpr.token</span><span class="tok-punc">=</span><span class="tok-val">&lt;PAT-with-write:packages&gt;</span></code></pre>
+  <pre data-lang="sh"><code><span class="tok-cmd">chmod</span> <span class="tok-num">600</span> <span class="tok-path">~/.gradle/gradle.properties</span></code></pre>
+  <p>
+    The publish config in <a href="build.gradle.kts">build.gradle.kts</a> authenticates with the
+    <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code> environment variables (the CI path). For local
+    publishing, supply the same values — e.g. export them in your shell, or rely on the
+    <code>gpr.user</code> / <code>gpr.token</code> fallback consumed by your environment.
+  </p>
+
+  <!-- ════════════ 3. Open the project ════════════ -->
+  <h2 id="s3"><span class="step-num">3</span> Open the project</h2>
+  <p>Open the repository as a Gradle project. Recommended IntelliJ configuration:</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Build System</td><td>Gradle</td></tr>
+      <tr><td>Gradle JVM</td><td>Java 21</td></tr>
+      <tr><td>Run tests using</td><td>Gradle</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <blockquote>
+    <p><strong>Run tests using Gradle</strong> is mandatory, not cosmetic. The <code>test</code> task's
+    <code>doFirst</code> injects the <code>aspectjweaver</code> as a JVM <code>-javaagent</code> — the
+    AspectJ Load-Time Weaving the reporting module relies on. The IDE's native TestNG runner bypasses it.</p>
+  </blockquote>
+
+  <!-- ════════════ 4. Understand the repository layout ════════════ -->
+  <h2 id="s4"><span class="step-num">4</span> Understand the repository layout</h2>
+  <pre><code>lx-test-kit
+│
+├── framework-core
+├── framework-test-support
+├── framework-reporting
+├── framework-splunk
+├── framework-bundle
+│
+├── gradle/
+├── build.gradle.kts
+├── settings.gradle.kts
+└── README.md</code></pre>
+  <p>Each published module focuses on a well-defined set of concerns:</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Module</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>framework-core</code></td><td>HTTP client abstraction, configuration, URL resolution, runtime model classes</td></tr>
+      <tr><td><code>framework-test-support</code></td><td>Base test classes, fluent request builder, assertion DSL, retry mechanism, schema &amp; snapshot validation</td></tr>
+      <tr><td><code>framework-reporting</code></td><td>Allure integration, automatic HTTP attachments, AspectJ instrumentation, logging integration</td></tr>
+      <tr><td><code>framework-splunk</code></td><td>Splunk client, polling utilities and assertion DSL</td></tr>
+      <tr><td><code>framework-bundle</code></td><td>Umbrella artifact re-exporting all public framework modules</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>
+    Consumer repositories depend only on <strong>framework-bundle</strong>. The remaining modules are
+    implementation details.
+  </p>
+  <blockquote>
+    <p><strong>Note:</strong> only the five modules above are wired in
+    <a href="settings.gradle.kts">settings.gradle.kts</a> and therefore built/published. Other module
+    directories you may see on disk (e.g. <code>framework-db-oracle</code>,
+    <code>framework-messaging-rabbitmq</code>) are <em>not</em> included in the build and are not
+    published — treat them as inactive until added to <code>settings.gradle.kts</code>.</p>
+  </blockquote>
+
+  <!-- ════════════ 5. Understand the architecture ════════════ -->
+  <h2 id="s5"><span class="step-num">5</span> Understand the architecture</h2>
+  <p>The testing platform follows a bi-repository architecture:</p>
+  <pre><code>          Framework Repository  (lx-test-kit)
+                    │
+                    │ publish
+                    ▼
+              GitHub Packages
+                    │
+                    ▼
+             Consumer Repository
+                    │
+                    ▼
+               API Test Suites</code></pre>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Framework repository</th><th>Consumer repository</th></tr></thead>
+    <tbody>
+      <tr><td>HTTP communication, assertion DSL, retry</td><td>API tests</td></tr>
+      <tr><td>Reporting &amp; logging</td><td>Endpoint definitions</td></tr>
+      <tr><td>External system integration (data fetching for cross-system assertions, e.g. Splunk)</td><td>Schemas &amp; snapshots</td></tr>
+      <tr><td>Reusable infrastructure</td><td>Environment configuration &amp; CI workflows</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>This separation lets framework releases evolve independently from the projects consuming them.</p>
+
+  <!-- ════════════ 6. Verify the project builds ════════════ -->
+  <h2 id="s6"><span class="step-num">6</span> Verify the project builds</h2>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-fn">help</span></code></pre>
+  <p>
+    Evaluates the Gradle configuration of every module (the configuration phase) without compiling or
+    running tests — a fast sanity check that the build scripts are well-formed and the Java 21 toolchain
+    is resolvable. If this fails:
+  </p>
+  <ul>
+    <li>verify Java 21 is being used;</li>
+    <li>refresh Gradle dependencies (<code>./gradlew --refresh-dependencies</code>).</li>
+  </ul>
+
+  <!-- ════════════ 7. Build the framework ════════════ -->
+  <h2 id="s7"><span class="step-num">7</span> Build the framework</h2>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-kw">clean</span> <span class="tok-fn">build</span></code></pre>
+  <p>This runs the complete verification pipeline:</p>
+  <ul>
+    <li>compiles every module;</li>
+    <li>compiles and verifies all modules (no module-level tests are present yet — the <code>test</code> task is a no-op);</li>
+    <li>packages every artifact (including the <code>javadoc</code> and <code>sources</code> jars — the build applies <code>withJavadocJar()</code> / <code>withSourcesJar()</code>);</li>
+    <li>prepares publishable Maven packages.</li>
+  </ul>
+  <p>A successful <code>clean build</code> confirms the framework is in a releasable state.</p>
+
+  <!-- ════════════ 9. Generate Javadoc ════════════ -->
+  <h2 id="s9"><span class="step-num">9</span> Generate Javadoc</h2>
+  <p>
+    There is <strong>no</strong> aggregate-javadoc task. Each module produces its own Javadoc. To
+    generate it for a module:
+  </p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-punc">:</span><span class="tok-path">framework-core</span><span class="tok-punc">:</span><span class="tok-fn">javadoc</span></code></pre>
+  <p>Output is written per module:</p>
+  <pre><code>framework-core/build/docs/javadoc/</code></pre>
+  <p>
+    A <code>clean build</code> (step 7) also packages a <code>javadoc</code> jar for every module via
+    <code>withJavadocJar()</code>. Review newly introduced public APIs before a major release.
+  </p>
+
+  <!-- ════════════ 10. Publish the framework locally ════════════ -->
+  <h2 id="s10"><span class="step-num">10</span> Publish the framework locally</h2>
+  <p>
+    When iterating on a change before cutting an official release, publish to your local Maven
+    repository. The command is the same on all platforms:
+  </p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-fn">publishToMavenLocal</span></code></pre>
+
+  <h3>macOS / Linux</h3>
+  <p>Artifacts land under:</p>
+  <pre><code>~/.m2/repository/</code></pre>
+
+  <h3>Windows</h3>
+  <p>Artifacts land under:</p>
+  <pre><code>%USERPROFILE%\.m2\repository\</code></pre>
+
+  <p>
+    A consumer project can then temporarily resolve the framework from there by adding
+    <code>mavenLocal()</code> to its repositories — useful when co-developing a framework change against
+    a real consumer before publishing.
+  </p>
+  <pre data-lang="kotlin"><code><span class="tok-kw">repositories</span> <span class="tok-punc">{</span>
+    <span class="tok-fn">mavenLocal</span><span class="tok-punc">()</span>
+    <span class="tok-fn">mavenCentral</span><span class="tok-punc">()</span>
+<span class="tok-punc">}</span></code></pre>
+  <h3>Typical development loop</h3>
+  <pre><code>edit module  →  :module:build  →  ./gradlew build
+      →  publishToMavenLocal  →  validate from consumer repo</code></pre>
+
+  <!-- ════════════ 11. Verify a local publication ════════════ -->
+  <h2 id="s11"><span class="step-num">11</span> Verify a local publication</h2>
+  <p>Confirm the artifacts installed under the framework's group coordinates:</p>
+  <p><strong>macOS / Linux:</strong></p>
+  <pre><code>~/.m2/repository/systems/leadex/lxtestkit/framework-bundle/</code></pre>
+  <p><strong>Windows:</strong></p>
+  <pre><code>%USERPROFILE%\.m2\repository\systems\leadex\lxtestkit\framework-bundle\</code></pre>
+  <p>A complete local publication includes all five published modules:</p>
+  <ul>
+    <li><code>framework-core</code></li>
+    <li><code>framework-test-support</code></li>
+    <li><code>framework-reporting</code></li>
+    <li><code>framework-splunk</code></li>
+    <li><code>framework-bundle</code></li>
+  </ul>
+  <p>
+    If any module is missing, verify it is listed in <a href="settings.gradle.kts">settings.gradle.kts</a>
+    and that the <code>maven-publish</code> plugin applies to it.
+  </p>
+
+  <!-- ════════════ 12. Bump the framework version ════════════ -->
+  <h2 id="s12"><span class="step-num">12</span> Bump the framework version</h2>
+  <p>
+    The version is a <strong>single source of truth</strong>: the <code>version</code> assignment in the
+    <code>subprojects { … }</code> block of <a href="build.gradle.kts">build.gradle.kts</a> — it applies
+    to every module at once.
+  </p>
+  <pre data-lang="kotlin"><code><span class="tok-kw">subprojects</span> <span class="tok-punc">{</span>
+    <span class="tok-prop">group</span>   <span class="tok-op">=</span> <span class="tok-str">"systems.leadex.lxtestkit"</span>
+    <span class="tok-prop">version</span> <span class="tok-op">=</span> <span class="tok-str">"1.0.5"</span>   <span class="tok-cmt">// ← bump this</span>
+<span class="tok-punc">}</span></code></pre>
+  <blockquote class="warn">
+    <p><strong>GitHub Packages does not allow overwriting an existing version.</strong> Publishing the same
+    version twice fails. Increment the version immediately before publishing, after all development and
+    verification is done.</p>
+  </blockquote>
+  <p>
+    Bump the version number in <code>build.gradle.kts</code> and in any version strings in
+    <code>README.md</code>. Commit the change before publishing.
+  </p>
+  <blockquote class="warn">
+    <p><strong>The version shown in this guide (1.0.5) is for illustration only.</strong> The actual
+    framework version will differ. Always check the current version in
+    <code>build.gradle.kts</code> subprojects block — it is the single source of truth for the
+    framework version; <code>README.md</code> only mirrors it in consumer dependency examples.</p>
+  </blockquote>
+
+  <!-- ════════════ 13. Publish to GitHub Packages ════════════ -->
+  <h2 id="s13"><span class="step-num">13</span> Publish to GitHub Packages</h2>
+  <p>
+    After bumping the version (step 12), publish with:
+  </p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-kw">clean</span> <span class="tok-fn">build</span> <span class="tok-fn">publish</span></code></pre>
+  <p>
+    This builds every module, runs the verification pipeline, generates Maven metadata, and uploads each
+    published module to <code>https://maven.pkg.github.com/ftoropov-leadex/lx-test-kit</code>.
+    Requires <code>GITHUB_ACTOR</code> + <code>GITHUB_TOKEN</code> (or the <code>gpr.user</code> /
+    <code>gpr.token</code> fallback from step 2).
+  </p>
+  <h2 id="release-flow" style="color: var(--heading); border-bottom: 1px solid var(--border);"><span class="step-num">★</span> Full release workflow (end-to-end)</h2>
+  <blockquote>
+    <p><strong>This is the canonical release path.</strong> Follow these steps in order every time you
+    ship a new framework version.</p>
+  </blockquote>
+  <pre><code>feature branch  →  implement  →  ./gradlew build  →  publishToMavenLocal (optional)
+      →  validate with consumer repo  →  merge to main
+      →  bump version  →  ./gradlew clean build publish  →  tag &amp; push  →  update consumer</code></pre>
+
+  <!-- ════════════ 14. Verify the published release ════════════ -->
+  <h2 id="s14"><span class="step-num">14</span> Verify the published release</h2>
+  <p>After publishing:</p>
+  <ul>
+    <li>the package appears on the repository's GitHub Packages page;</li>
+    <li>the expected version is visible;</li>
+    <li>every published module was uploaded;</li>
+    <li>consumers can resolve the new version.</li>
+  </ul>
+  <p>Quick validation — bump the framework version in a consumer repo and run:</p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-fn">help</span></code></pre>
+  <p>If dependency resolution succeeds there, the publication is good.</p>
+
+  <!-- ════════════ 15. Validate the framework in a consumer project ════════════ -->
+  <h2 id="s15"><span class="step-num">15</span> Validate the framework in a consumer project</h2>
+  <p>Before announcing a release, validate it against a real consumer repository:</p>
+  <ul>
+    <li>update the framework dependency &amp; reload Gradle;</li>
+    <li>execute a representative test suite;</li>
+    <li>verify generated Allure reports, retry behaviour, logging and HTTP communication.</li>
+  </ul>
+  <p>
+    Testing against a real consumer is the most reliable way to catch integration regressions before the
+    release reaches other teams.
+  </p>
+
+  <!-- ════════════ 16. Troubleshooting ════════════ -->
+  <h2 id="s16"><span class="step-num">16</span> Troubleshooting</h2>
+
+  <h3>Build fails</h3>
+  <p>Verify Java 21 is selected, the Gradle wrapper is used, and dependencies resolve. Refresh if needed:</p>
+  <pre data-lang="sh"><code><span class="tok-cmd">./gradlew</span> <span class="tok-opt">--refresh-dependencies</span></code></pre>
+
+  <h3>Publishing fails</h3>
+  <p>Common causes:</p>
+  <ul>
+    <li>attempting to publish an already-existing version (no-overwrite rule — bump first);</li>
+    <li>token missing <code>write:packages</code>, or <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code> not set;</li>
+    <li>network interruption during upload.</li>
+  </ul>
+
+  <h3>Tests behave differently in the IDE</h3>
+  <p>
+    Set <strong>Run tests using: Gradle</strong> and <strong>Gradle JVM: Java 21</strong>. The native IDE
+    runner bypasses the AspectJ weaver injected by the Gradle <code>test</code> task, so reporting/
+    instrumentation will differ.
+  </p>
+
+  <h3>Generated reports are missing information</h3>
+  <p>Verify tests ran through Gradle, Allure result directories were produced, and stale report output was cleared before regenerating.</p>
+
+  <!-- ════════════ 17. Repository responsibilities ════════════ -->
+  <h2 id="s17"><span class="step-num">17</span> Repository responsibilities</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Framework repository</th><th>Consumer repository</th></tr></thead>
+    <tbody>
+      <tr><td>HTTP client</td><td>API tests</td></tr>
+      <tr><td>Request builder</td><td>TestNG suites</td></tr>
+      <tr><td>Assertion DSL</td><td>Endpoint definitions</td></tr>
+      <tr><td>Retry mechanism</td><td>Schemas</td></tr>
+      <tr><td>Reporting</td><td>Snapshots</td></tr>
+      <tr><td>Logging</td><td>Environment configuration</td></tr>
+      <tr><td>External system integration (data fetching for cross-system assertions)</td><td>CI workflows</td></tr>
+      <tr><td>Artifact publishing</td><td>Test execution</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The framework repository intentionally contains no project-specific test cases or environment configuration.</p>
+
+  <hr>
+
+  <!-- ════════════ Quick reference ════════════ -->
+  <h2 id="ref">Quick reference</h2>
+  <div class="table-wrap">
+  <table class="quick-ref">
+    <thead><tr><th>Goal</th><th>Command</th></tr></thead>
+    <tbody>
+      <tr><td>Verify Gradle setup</td><td><code>./gradlew help</code></td></tr>
+      <tr><td>Build framework</td><td><code>./gradlew clean build</code></td></tr>
+      <tr><td>Generate module Javadoc</td><td><code>./gradlew :&lt;module&gt;:javadoc</code></td></tr>
+      <tr><td>Publish locally</td><td><code>./gradlew publishToMavenLocal</code></td></tr>
+      <tr><td>Publish to GitHub Packages</td><td><code>./gradlew clean build publish</code></td></tr>
+      <tr><td>Refresh dependencies</td><td><code>./gradlew --refresh-dependencies</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <blockquote>
+    <p><strong>Next:</strong> once a framework version is published, set up the consumer repository — see its
+    own <code>GETTING_STARTED</code> guide for defining suites, environments, endpoints, schemas and
+    snapshots.</p>
+  </blockquote>
+
+  <div class="footer">
+    Framework repository · <code>lx-test-kit</code> · group <code>systems.leadex.lxtestkit</code> · v1.0.6
+  </div>
+
+</div>
+</body>
+</html>

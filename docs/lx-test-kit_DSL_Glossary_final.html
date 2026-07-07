@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lx-test-kit DSL Glossary</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --heading: #f0f6fc;
+    --accent: #58a6ff;
+    --accent-dim: #1f6feb;
+    --code-bg: #161b22;
+    --inline-code: #c9d1d9;
+    --inline-code-bg: #343941;
+    --blockquote-border: #3fb950;
+    --blockquote-bg: #0d2b12;
+    --table-stripe: #161b22;
+    --table-hover: #1c2129;
+    --warning: #d29922;
+    --warning-bg: #2b2200;
+    --danger: #f85149;
+    --success: #3fb950;
+    --radius: 6px;
+    --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── main container ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── header ── */
+  .doc-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--heading);
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .doc-header .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .doc-header .subtitle code {
+    background: var(--inline-code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .doc-header .subtitle strong { color: var(--heading); }
+
+  /* ── sections ── */
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-top: 36px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.2px;
+  }
+  h2[id], h3[id] { scroll-margin-top: 60px; }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  h3 code {
+    background: var(--inline-code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--inline-code);
+  }
+
+  /* ── heading anchor links ── */
+  .heading-wrapper {
+    position: relative;
+  }
+  .heading-anchor {
+    position: absolute;
+    left: -1.1em;
+    top: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 0.85em;
+    line-height: inherit;
+  }
+  .heading-anchor:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .heading-wrapper:hover .heading-anchor {
+    opacity: 1;
+  }
+  /* tweak for h3 (smaller font) */
+  h3 .heading-anchor {
+    left: -1.0em;
+    font-size: 0.8em;
+  }
+  p {
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  p:last-child { margin-bottom: 0; }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover { text-decoration: underline; }
+
+  strong { color: var(--heading); font-weight: 600; }
+
+  /* ── inline code ── */
+  :not(pre) > code {
+    background: var(--inline-code-bg);
+    color: var(--inline-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ── code blocks ── */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 12px 0 20px;
+    overflow-x: auto;
+    position: relative;
+  }
+  pre code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    display: block;
+  }
+
+  /* ── tables ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: var(--surface);
+    color: var(--heading);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--table-stripe); }
+  tr:hover td { background: var(--table-hover); }
+  td:first-child code {
+    background: none;
+    padding: 0;
+    font-weight: 600;
+    color: var(--heading);
+    white-space: nowrap;
+  }
+
+  /* ── blockquotes ── */
+  blockquote {
+    border-left: 3px solid var(--blockquote-border);
+    background: var(--blockquote-bg);
+    padding: 10px 16px;
+    margin: 12px 0 20px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--text);
+    font-size: 14px;
+  }
+  blockquote p { margin: 0; }
+  blockquote strong { color: var(--success); }
+
+  /* ── lists ── */
+  ul, ol {
+    margin: 8px 0 16px;
+    padding-left: 24px;
+  }
+  li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  li:last-child { margin-bottom: 0; }
+  li code { font-size: 13px; }
+
+  /* ── horizontal rules ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* ── package tag ── */
+  .package {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 4px 0 16px 0;
+    background: var(--surface);
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── footer ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* ── scrollbar ── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ── note ── */
+  .note { color: var(--danger); font-weight: 600; }
+
+  /* ── home link ── */
+  .home-link {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    text-decoration: none;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: border-color 0.15s, color 0.15s;
+    margin-bottom: 16px;
+  }
+  .home-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <a href="index.html" class="home-link">← Home</a>
+
+  <!-- ── header ── -->
+  <div class="doc-header">
+    <h1>lx-test-kit DSL Glossary</h1>
+    <p class="subtitle">
+      Two assertion DSL layers, both backed by AssertJ <code>AbstractAssert</code> — every public method
+      is auto-stepped by <code>AllureAspectJ</code> via LTW. Splunk await methods
+      (<code>SplunkSupport</code> / <code>SplunkClient</code>) are included because they form the
+      pre-assertion pipeline.
+    </p>
+  </div>
+
+  <!-- ════════════ API Response DSL ════════════ -->
+  <h2 id="api-response-dsl" class="heading-wrapper"><a href="#api-response-dsl" class="heading-anchor">#</a>API Response DSL</h2>
+  <p class="package">io.leadex.aqa.testsupport.assertions</p>
+
+  <h3 id="api-response-level" class="heading-wrapper"><a href="#api-response-level" class="heading-anchor">#</a>Response-level</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.assertThat()</code></td>
+    <td><code>ApiResponseAssert</code> — Static entry point for the API response assertion chain.</td>
+    <td><code>ApiResponse&lt;T&gt;</code></td>
+    <td><code>ApiResponseAssert.assertThat(response)</code></td>
+  </tr>
+  <tr>
+    <td><code>.hasStatus()</code></td>
+    <td><code>AbstractApiResponseAssert</code> — Asserts HTTP status code equals the expected value.</td>
+    <td><code>int</code></td>
+    <td><code>ApiResponseAssert.assertThat(response).hasStatus(200)</code></td>
+  </tr>
+  <tr>
+    <td><code>.body()</code></td>
+    <td><code>AbstractApiResponseAssert</code> — Parses the raw JSON response body and opens a <code>BodyAssert</code> scope via consumer lambda. The raw body is parsed once and cached.</td>
+    <td><code>Consumer&lt;BodyAssert&gt;</code></td>
+    <td><code>ApiResponseAssert.assertThat(response).hasStatus(200).body(b -&gt; b.field("id").isPresent())</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="api-body-level" class="heading-wrapper"><a href="#api-body-level" class="heading-anchor">#</a>Body-level (<code>.body(b → …)</code> scope)</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.at()</code></td>
+    <td><code>BodyAssert</code> — Navigates to an array element by index, opens a nested <code>BodyAssert</code> scope. Requires the body to be a non-empty array at that index.</td>
+    <td><code>int</code> + <code>Consumer&lt;BodyAssert&gt;</code></td>
+    <td><code>.body(b -&gt; b.at(2, el -&gt; el.field("name").hasValue("third")))</code></td>
+  </tr>
+  <tr>
+    <td><code>.first()</code></td>
+    <td><code>BodyAssert</code> — Shorthand for <code>.at(0, …)</code>. Navigates to the first array element, opens a nested <code>BodyAssert</code> scope.</td>
+    <td><code>Consumer&lt;BodyAssert&gt;</code></td>
+    <td><code>.body(b -&gt; b.first(el -&gt; el.field("id").isNotBlank()))</code></td>
+  </tr>
+  <tr>
+    <td><code>.field()</code></td>
+    <td><code>BodyAssert</code> — Navigates to a field by dot-notation path (e.g. <code>"args.suite"</code>, <code>"items.0.name"</code>), opens a <code>FieldAssert</code> scope. <strong>Never throws</strong> on missing nodes — the terminal assertion decides.</td>
+    <td><code>String</code> + <code>Consumer&lt;FieldAssert&gt;</code></td>
+    <td><code>.body(b -&gt; b.field("args.suite", f -&gt; f.hasValue("integration")))</code></td>
+  </tr>
+  <tr>
+    <td><code>.hasField()</code></td>
+    <td><code>BodyAssert</code> — Asserts a field exists and is non-null at the given dot-notation path. Structural check without value comparison.</td>
+    <td><code>String</code></td>
+    <td><code>.body(b -&gt; b.hasField("data.items.0.name"))</code></td>
+  </tr>
+  <tr>
+    <td><code>.isNotEmpty()</code></td>
+    <td><code>BodyAssert</code> — Asserts the body is a non-empty JSON array. Fails if not an array or if empty.</td>
+    <td>—</td>
+    <td><code>.body(b -&gt; b.isNotEmpty().first(el -&gt; …))</code></td>
+  </tr>
+  <tr>
+    <td><code>.matchesSchema()</code></td>
+    <td><code>BodyAssert</code> — Validates the <strong>full original response JSON</strong> against a JSON Schema file on the classpath. Not available on <code>FieldAssert</code>.</td>
+    <td><code>String</code> — classpath-relative path</td>
+    <td><code>.body(b -&gt; b.matchesSchema("schemas/postman-echo-get.schema.json"))</code></td>
+  </tr>
+  <tr>
+    <td><code>.matchesSnapshot()</code></td>
+    <td><code>BodyAssert</code> — Validates the <strong>full original response JSON</strong> against a golden-file snapshot by name. Not available on <code>FieldAssert</code>.</td>
+    <td><code>String</code> — snapshot name</td>
+    <td><code>.body(b -&gt; b.matchesSnapshot("postman-echo-get"))</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="api-field-level" class="heading-wrapper"><a href="#api-field-level" class="heading-anchor">#</a>Field-level (<code>.field(path, f → …)</code> scope)</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.isPresent()</code></td>
+    <td><code>FieldAssert</code> — Asserts the field exists and is non-null. Fails on missing node or JSON null.</td>
+    <td>—</td>
+    <td><code>.field("orderId", f -&gt; f.isPresent())</code></td>
+  </tr>
+  <tr>
+    <td><code>.hasValue()</code></td>
+    <td><code>FieldAssert</code> — Asserts the field equals an expected value. Type-aware extraction: <code>String</code>, <code>Integer</code>/<code>int</code>, <code>Long</code>, <code>Double</code>, <code>Boolean</code>.</td>
+    <td><code>Object</code></td>
+    <td><code>.field("status", f -&gt; f.hasValue("created"))</code> / <code>.field("count", f -&gt; f.hasValue(3))</code></td>
+  </tr>
+  <tr>
+    <td><code>.isNotBlank()</code></td>
+    <td><code>FieldAssert</code> — Asserts the field is a non-blank string. Fails on missing, null, empty, or whitespace-only.</td>
+    <td>—</td>
+    <td><code>.field("message", f -&gt; f.isNotBlank())</code></td>
+  </tr>
+  <tr>
+    <td><code>.isNotEmpty()</code></td>
+    <td><code>FieldAssert</code> — Asserts the field is non-empty. For arrays: size &gt; 0. For strings: length &gt; 0. Fails on missing or null.</td>
+    <td>—</td>
+    <td><code>.field("tags", f -&gt; f.isNotEmpty())</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="dot-notation-rules" class="heading-wrapper"><a href="#dot-notation-rules" class="heading-anchor">#</a>Dot-notation path rules</h3>
+  <ul>
+    <li>Split on literal <code>.</code> only — <code>"args.suite"</code>, <code>"items.0.name"</code>. Brackets (<code>[]</code>) are <strong>not</strong> supported.</li>
+    <li>Array index navigation: when a path segment is all digits (e.g. <code>"0"</code>) and the current node is an array, the navigator resolves it as a positional index. <code>"items.0.name"</code> navigates into the first element of the <code>items</code> array.</li>
+    <li>Non-numeric segments are treated as JSON object keys.</li>
+  </ul>
+
+  <pre><code>// Given response body:
+// { "items": [{"name":"apple"}, {"name":"banana"}] }
+
+.body(b -&gt; b
+    .field("items.0.name", f -&gt; f.hasValue("apple"))   <span class="tok-cmt">// &quot;0&quot; resolves as array index 0</span>
+    .field("items.1.name", f -&gt; f.hasValue("banana"))   <span class="tok-cmt">// &quot;1&quot; resolves as array index 1</span>
+    .field("items.name",   f -&gt; f.isPresent())           <span class="tok-cmt">// &quot;name&quot; is non-numeric → object key lookup</span>
+)</code></pre>
+
+  <h3 id="api-chain-invariants" class="heading-wrapper"><a href="#api-chain-invariants" class="heading-anchor">#</a>Chain invariants</h3>
+  <ul>
+    <li><code>.hasStatus()</code> <strong>must</strong> be called before <code>.body()</code> when status is relevant.</li>
+    <li><code>.body()</code> <strong>always requires a lambda</strong> — there is no short-form <code>.body().field(…)</code>. The lambda scope is what allows <code>AllureAspectJ</code> to wrap it as a collapsible nesting step in the Allure report HTML. Without nesting, a flat list of assertion steps makes it hard to tell which value is the field path versus the expected value.</li>
+    <li><code>.field(dotPath, …)</code> <strong>never throws</strong> on missing nodes — only terminal assertions (<code>hasValue</code>, <code>isNotBlank</code>, etc.) fail.</li>
+    <li><code>.first()</code> / <code>.at()</code> require a non-empty array — guard with <code>.isNotEmpty()</code>.</li>
+    <li><code>.matchesSchema()</code> / <code>.matchesSnapshot()</code> always validate the <strong>full original response body</strong>, regardless of navigation depth.</li>
+    <li>Assertion chain must remain <strong>linear</strong> — no branching, no storing intermediate DSL objects.</li>
+  </ul>
+
+  <pre><code><span class="tok-cmt">// ✅ CORRECT — .body() takes a Consumer&lt;BodyAssert&gt; lambda (b → …)</span>
+ApiResponseAssert.assertThat(response)
+    .hasStatus(200)
+    .body(b -&gt; b                          <span class="tok-cmt">// ← lambda opens the nested scope</span>
+        .field("id",   f -&gt; f.isPresent())
+        .field("name", f -&gt; f.hasValue("test")));
+
+<span class="tok-cmt">// ❌ INVALID — no .body() overload that returns BodyAssert directly.</span>
+<span class="tok-cmt">//     This does not compile — .body() always requires a lambda argument.</span>
+ApiResponseAssert.assertThat(response)
+    .hasStatus(200)
+    .body()                              <span class="tok-cmt">// ← compile error: missing Consumer argument</span>
+        .field("id", f -&gt; f.isPresent());</code></pre>
+
+  <!-- ════════════ Splunk DSL ════════════ -->
+  <h2 id="splunk-dsl" class="heading-wrapper"><a href="#splunk-dsl" class="heading-anchor">#</a>Splunk DSL</h2>
+  <p class="package">io.leadex.aqa.splunk &nbsp;|&nbsp; io.leadex.aqa.splunk.assertions</p>
+
+  <h3 id="splunk-data-model" class="heading-wrapper"><a href="#splunk-data-model" class="heading-anchor">#</a>Data model</h3>
+  <p>
+    <strong><code>SplunkSearchResponse</code></strong> is an immutable record wrapping an ordered <code>List&lt;SplunkSearchResult&gt;</code>.
+    It is the return type of every search/await operation on <code>SplunkClient</code> and the input to
+    <code>SplunkResponseAssert.assertThat()</code>. In a test, it acts as the bridge between
+    &ldquo;poll Splunk until logs appear&rdquo; and &ldquo;assert on the log entries.&rdquo;
+    It carries helper accessors (<code>isEmpty()</code>, <code>size()</code>, <code>first()</code> returning
+    <code>Optional</code>) but its primary role is to be the data carrier — the assertion DSL owns all the
+    validation logic.
+  </p>
+  <p>
+    <strong><code>SplunkSearchResult</code></strong> is the per-row record: well-known fields
+    (<code>_raw</code>, <code>_time</code>, <code>source</code>, <code>sourcetype</code>, <code>host</code>,
+    <code>index</code>) plus a <code>fields</code> map of everything else.
+  </p>
+
+  <h3 id="splunk-query-construction" class="heading-wrapper"><a href="#splunk-query-construction" class="heading-anchor">#</a>Query construction</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>SplunkQueries.forCorrelationId()</code></td>
+    <td><code>SplunkQueries</code> — Pre-built SPL template. Produces <code>search index=&lt;index&gt; correlationId="&lt;corrId&gt;" | spath | table correlationId, message, tracePoint, applicationName, timestamp</code>. Overload accepts custom table field list. Keeps log field names in one place. Called internally by <code>SplunkSupport.awaitLogsFor()</code>; can also be called directly.</td>
+    <td><code>String</code> corrId + <code>String</code> index + optional <code>String</code> tableFields</td>
+    <td><code>String spl = SplunkQueries.forCorrelationId(corrId, "mule_dev");</code></td>
+  </tr>
+  <tr>
+    <td><code>.search()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Static entry point. Returns a new builder.</td>
+    <td>—</td>
+    <td><code>SplunkQueryBuilder.search()</code></td>
+  </tr>
+  <tr>
+    <td><code>.index()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends <code>index=&lt;name&gt;</code> clause.</td>
+    <td><code>String</code></td>
+    <td><code>.index("mule_dev")</code></td>
+  </tr>
+  <tr>
+    <td><code>.source()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends <code>source=&lt;path&gt;</code> clause.</td>
+    <td><code>String</code></td>
+    <td><code>.source("/opt/mule4/logs/app.log")</code></td>
+  </tr>
+  <tr>
+    <td><code>.sourceType()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends <code>sourcetype=&lt;type&gt;</code> clause.</td>
+    <td><code>String</code></td>
+    <td><code>.sourceType("mule4")</code></td>
+  </tr>
+  <tr>
+    <td><code>.host()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends <code>host=&lt;host&gt;</code> clause.</td>
+    <td><code>String</code></td>
+    <td><code>.host("prod-node-01")</code></td>
+  </tr>
+  <tr>
+    <td><code>.where()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends <code>field="value"</code> clause (SPL-quote-escaped).</td>
+    <td><code>String</code> field + <code>String</code> value</td>
+    <td><code>.where("correlationId", corrId)</code></td>
+  </tr>
+  <tr>
+    <td><code>.keyword()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends a free-text keyword term (SPL-quote-escaped).</td>
+    <td><code>String</code></td>
+    <td><code>.keyword("REQUEST")</code></td>
+  </tr>
+  <tr>
+    <td><code>.pipe()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends <code>| &lt;cmd&gt;</code>. Escape hatch for any pipe command (<code>spath</code>, <code>rex</code>, <code>table</code>, <code>stats</code>, etc.).</td>
+    <td><code>String</code></td>
+    <td><code>.pipe("table correlationId, message, timestamp")</code></td>
+  </tr>
+  <tr>
+    <td><code>.raw()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Appends an unquoted search-clause fragment verbatim.</td>
+    <td><code>String</code></td>
+    <td><code>.raw("earliest=-1h latest=now")</code></td>
+  </tr>
+  <tr>
+    <td><code>.build()</code></td>
+    <td><code>SplunkQueryBuilder</code> — Assembles in fixed order: <code>search → index → source → sourcetype → host → terms → pipes</code>.</td>
+    <td>—</td>
+    <td><code>.build()</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="splunk-await" class="heading-wrapper"><a href="#splunk-await" class="heading-anchor">#</a>Await — pre-assertion pipeline</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.awaitLogsFor()</code></td>
+    <td><code>SplunkSupport</code> — Static singleton. Extracts <code>correlationId</code> from the <code>ApiResponse</code>, builds the standard SPL query via <code>SplunkQueries.forCorrelationId()</code>, polls Splunk until results appear.</td>
+    <td><code>ApiResponse&lt;?&gt;</code> + <code>String</code> index name</td>
+    <td><code>var logs = SplunkSupport.awaitLogsFor(resp, "my_index");</code></td>
+  </tr>
+  <tr>
+    <td><code>.client()</code></td>
+    <td><code>SplunkSupport</code> — Returns the shared <code>SplunkClient</code> singleton for custom SPL queries.</td>
+    <td>—</td>
+    <td><code>var client = SplunkSupport.client();</code></td>
+  </tr>
+  <tr>
+    <td><code>.awaitNonEmpty()</code></td>
+    <td><code>SplunkClient</code> — Polls Splunk via Awaitility until the SPL query returns ≥1 result. Handles indexing latency.</td>
+    <td><code>String</code> — SPL query string</td>
+    <td><code>client.awaitNonEmpty("search index=my_index correlationId=\"abc\"")</code></td>
+  </tr>
+  <tr>
+    <td><code>.awaitResults()</code></td>
+    <td><code>SplunkClient</code> — Polls until a predicate holds on the results. Generic polling with custom condition.</td>
+    <td><code>String</code> SPL + <code>Predicate&lt;SplunkSearchResponse&gt;</code></td>
+    <td><code>client.awaitResults(query, r -&gt; r.size() &gt;= 3)</code></td>
+  </tr>
+  <tr>
+    <td><code>.awaitResultsWithField()</code></td>
+    <td><code>SplunkClient</code> — Polls until at least one result has the given field=value; returns only matching results.</td>
+    <td><code>String</code> SPL + <code>String</code> field + <code>String</code> value</td>
+    <td><code>client.awaitResultsWithField(query, "tracePoint", "OUT")</code></td>
+  </tr>
+  <tr>
+    <td><code>.searchOneShot()</code></td>
+    <td><code>SplunkClient</code> — Synchronous POST to <code>/services/search/jobs/export</code>. Parses NDJSON, returns <code>SplunkSearchResponse</code>.</td>
+    <td><code>String</code> SPL + optional <code>earliest</code>/<code>latest</code> time bounds</td>
+    <td><code>client.searchOneShot("search index=my_index | head 10")</code></td>
+  </tr>
+  <tr>
+    <td><code>.searchBlocking()</code></td>
+    <td><code>SplunkClient</code> — Creates a search job, polls until <code>DONE</code>, returns results.</td>
+    <td><code>String</code> SPL</td>
+    <td><code>client.searchBlocking("search index=my_index | stats count by host")</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="splunk-response-level" class="heading-wrapper"><a href="#splunk-response-level" class="heading-anchor">#</a>Response-level</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.assertThat()</code></td>
+    <td><code>SplunkResponseAssert</code> — Static entry point for Splunk search result assertions.</td>
+    <td><code>SplunkSearchResponse</code></td>
+    <td><code>SplunkResponseAssert.assertThat(logs)</code></td>
+  </tr>
+  <tr>
+    <td><code>.isNotEmpty()</code></td>
+    <td><code>SplunkResponseAssert</code> — Asserts the response contains at least one search result.</td>
+    <td>—</td>
+    <td><code>SplunkResponseAssert.assertThat(logs).isNotEmpty()</code></td>
+  </tr>
+  <tr>
+    <td><code>.hasResultCount()</code></td>
+    <td><code>SplunkResponseAssert</code> — Asserts the exact number of search results.</td>
+    <td><code>int</code></td>
+    <td><code>SplunkResponseAssert.assertThat(logs).hasResultCount(3)</code></td>
+  </tr>
+  <tr>
+    <td><code>.anyResultHasField()</code></td>
+    <td><code>SplunkResponseAssert</code> — Asserts at least one result in the set has a field matching the expected value. Does not navigate.</td>
+    <td><code>String</code> fieldName + <code>String</code> expectedValue</td>
+    <td><code>.anyResultHasField("tracePoint", "IN")</code></td>
+  </tr>
+  <tr>
+    <td><code>.first()</code></td>
+    <td><code>SplunkResponseAssert</code> — Navigates to the first search result, returns <code>SplunkResultAssert</code>. Requires non-empty response. <span class="note">Terminal navigation — no <code>.back()</code>.</span></td>
+    <td>—</td>
+    <td><code>.isNotEmpty().first().hasField("tracePoint", "OUT")</code></td>
+  </tr>
+  <tr>
+    <td><code>.result()</code></td>
+    <td><code>SplunkResponseAssert</code> — Navigates to the result at a given index, returns <code>SplunkResultAssert</code>. Requires valid index. <span class="note">Terminal navigation — no <code>.back()</code>.</span></td>
+    <td><code>int</code></td>
+    <td><code>.isNotEmpty().result(1).rawContains("error")</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="splunk-per-result" class="heading-wrapper"><a href="#splunk-per-result" class="heading-anchor">#</a>Per-result</h3>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.hasField()</code></td>
+    <td><code>SplunkResultAssert</code> — Asserts a named field equals the expected string value.</td>
+    <td><code>String</code> fieldName + <code>String</code> expectedValue</td>
+    <td><code>.first().hasField("tracePoint", "OUT")</code></td>
+  </tr>
+  <tr>
+    <td><code>.fieldContains()</code></td>
+    <td><code>SplunkResultAssert</code> — Asserts a named field's value contains the given substring.</td>
+    <td><code>String</code> fieldName + <code>String</code> substring</td>
+    <td><code>.first().fieldContains("message", "timeout")</code></td>
+  </tr>
+  <tr>
+    <td><code>.rawContains()</code></td>
+    <td><code>SplunkResultAssert</code> — Asserts the raw <code>_raw</code> field contains the given substring.</td>
+    <td><code>String</code></td>
+    <td><code>.first().rawContains("ERROR 500")</code></td>
+  </tr>
+  <tr>
+    <td><code>.hasSource()</code></td>
+    <td><code>SplunkResultAssert</code> — Asserts the <code>source</code> field equals the expected value.</td>
+    <td><code>String</code></td>
+    <td><code>.first().hasSource("/var/log/app.log")</code></td>
+  </tr>
+  <tr>
+    <td><code>.hasHost()</code></td>
+    <td><code>SplunkResultAssert</code> — Asserts the <code>host</code> field equals the expected value.</td>
+    <td><code>String</code></td>
+    <td><code>.first().hasHost("prod-node-01")</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 id="splunk-chain-invariants" class="heading-wrapper"><a href="#splunk-chain-invariants" class="heading-anchor">#</a>Splunk chain invariants</h3>
+  <ul>
+    <li><code>.first()</code> and <code>.result()</code> return <code>SplunkResultAssert</code> — terminal navigation, no <code>.back()</code>. Do response-level assertions (<code>.isNotEmpty()</code>, <code>.hasResultCount()</code>, <code>.anyResultHasField(…)</code>) <strong>before</strong> navigating into results.</li>
+    <li><code>.first()</code> and <code>.result()</code> require a non-empty response — guard with <code>.isNotEmpty()</code>.</li>
+    <li><code>SplunkSupport.awaitLogsFor(…)</code> polls with Awaitility (default timeout 60&nbsp;s, poll interval 3&nbsp;s). Re-authenticates on 401 (session expiry).</li>
+    <li>All assertion methods extend AssertJ <code>AbstractAssert</code> → auto-stepped by <code>AllureAspectJ</code>.</li>
+  </ul>
+
+  <!-- ════════════ Full integration example ════════════ -->
+  <h2 id="example" class="heading-wrapper"><a href="#example" class="heading-anchor">#</a>Full integration example</h2>
+
+  <pre><code>@Test(description = "API call produces expected Splunk logs")
+public void shouldLogTracePoints() {
+    var response = call("create-order", String.class)
+            .bodyField("customerId", "CUST-001")
+            .send();
+
+    ApiResponseAssert.assertThat(response)
+            .hasStatus(201)
+            .body(b -&gt; b
+                    .field("orderId", f -&gt; f.isNotBlank())
+                    .matchesSchema("schemas/order-response.schema.json"));
+
+    var logs = SplunkSupport.awaitLogsFor(response, "app-logs");
+
+    SplunkResponseAssert.assertThat(logs)
+            .isNotEmpty()
+            .hasResultCount(1)
+            .first()
+                .hasField("tracePoint", "ORDER_CREATED")
+                .rawContains("CUST-001");
+}</code></pre>
+
+  <div class="footer">
+    lx-test-kit · <code>lx-test-kit_DSL_Glossary</code> · API Response DSL &amp; Splunk DSL
+  </div>
+
+</div>
+</body>
+</html>

@@ -327,12 +327,7 @@
       the framework (HTTP client, assertion DSL, Allure reporting, retry, TestNG listeners) ships as the
       published Maven artifact <a href="https://github.com/ftoropov-leadex/lx-test-kit"><code>lx-test-kit</code></a>
       (<code>systems.leadex.lxtestkit:framework-bundle</code>).
-    </p>
-    <p class="subtitle">
-      For the conceptual map of the layout and CI, see <a href="README.md">README.md</a>. This doc is the linear
-      "do these steps in order" path.
-    </p>
-  </div>
+    </p>  </div>
 
   <!-- ════════════ 0. Prerequisites ════════════ -->
   <h2><span class="step-num">0</span> Prerequisites</h2>
@@ -378,14 +373,23 @@
   <h2><span class="step-num">1</span> Get the repo</h2>
 
   <p><span class="opt-label">Option A</span> <strong>clone an existing repo:</strong></p>
+  <p><strong>macOS / Linux:</strong></p>
   <pre data-lang="sh"><code>git clone https://github.com/ftoropov-leadex/test-storage-bae.git
+cd test-storage-bae</code></pre>
+  <p><strong>Windows (PowerShell / cmd):</strong></p>
+  <pre data-lang="powershell"><code>git clone https://github.com/ftoropov-leadex/test-storage-bae.git
 cd test-storage-bae</code></pre>
 
   <p><span class="opt-label">Option B</span> <strong>set up from scratch (no existing repo):</strong></p>
   <ol>
     <li>Create a new repository on GitHub.</li>
     <li>Initialize it locally:
+      <p><strong>macOS / Linux:</strong></p>
       <pre data-lang="sh"><code>mkdir my-test-repo && cd my-test-repo
+git init</code></pre>
+      <p><strong>Windows (PowerShell / cmd):</strong></p>
+      <pre data-lang="powershell"><code>mkdir my-test-repo
+cd my-test-repo
 git init</code></pre>
     </li>
     <li>Copy the Gradle build files (<code>build.gradle.kts</code>, <code>settings.gradle.kts</code>, <code>gradle.properties</code>), the <code>test-suites/</code> structure, and <code>.github/workflows/</code> from this guide's reference layout.</li>
@@ -395,7 +399,7 @@ git init</code></pre>
   <!-- ════════════ 2. One-time credentials setup ════════════ -->
   <h2><span class="step-num">2</span> One-time credentials setup <span style="font-weight:400;color:var(--text-muted);font-size:14px;">(for local runs)</span></h2>
 
-  <p>Create <code>~/.gradle/gradle.properties</code> — <strong>outside</strong> this repo, never committed:</p>
+  <p>Create <code>gradle.properties</code> — <strong>outside</strong> this repo, never committed:</p>
 
   <pre data-lang="properties"><code><span class="tok-prop">gpr.user</span><span class="tok-punc">=</span><span class="tok-val">&lt;github-username&gt;</span>
 <span class="tok-prop">gpr.token</span><span class="tok-punc">=</span><span class="tok-val">&lt;PAT-with-read:packages&gt;</span></code></pre>
@@ -407,23 +411,26 @@ git init</code></pre>
   <pre data-lang="powershell"><code><span class="tok-cmt"># Restrict access to the current user only</span>
 <span class="tok-cmd">icacls</span> <span class="tok-str">"$env:USERPROFILE\.gradle\gradle.properties"</span> <span class="tok-opt">/inheritance:r</span> <span class="tok-opt">/grant:r</span> <span class="tok-str">"$env:USERNAME:(R)"</span></code></pre>
 
-  <p>The credentials block in <a href="build.gradle.kts">build.gradle.kts</a> reads <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code>
+  <p>The credentials block in build.gradle.kts reads <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code>
   env vars first (CI path), then falls back to these <code>gpr.user</code> / <code>gpr.token</code> properties (local path).</p>
 
   <!-- ════════════ 3. Pin the framework version ════════════ -->
   <h2><span class="step-num">3</span> Pin the framework version</h2>
 
-  <p><a href="gradle.properties">gradle.properties</a>:</p>
+  <p>gradle.properties:</p>
 
   <pre data-lang="properties"><code><span class="tok-prop">lxtestkit.version</span><span class="tok-punc">=</span><span class="tok-num">1.0.5</span></code></pre>
 
   <p>Every suite pulls <code>framework-bundle:${lxtestkit.version}</code> via
-  <a href="test-suites/build.gradle.kts">test-suites/build.gradle.kts</a>. Bump this one line when a new framework
+  test-suites/build.gradle.kts. Bump this one line when a new framework
   version publishes, then Gradle-reload.</p>
 
   <blockquote>
-    <p>See the actual framework version at <a href="gradle.properties">gradle.properties</a>.</p>
+    <p>Set the actual framework version at gradle.properties.</p>
   </blockquote>
+
+  <p>No manual classpath tweaks, no local framework sources — the Gradle dependency declaration is the
+  single source of truth for which framework version your tests run against.</p>
 
   <!-- ════════════ 4. Verify the toolchain resolves ════════════ -->
   <h2><span class="step-num">4</span> Verify the toolchain resolves</h2>
@@ -440,7 +447,7 @@ git init</code></pre>
 
   <ol>
     <li>
-      <p><strong>Endpoint registry</strong> — <a href="test-suites/resources/domains.properties">test-suites/resources/domains.properties</a>:</p>
+      <p><strong>Endpoint registry</strong> — test-suites/resources/domains.properties:</p>
       <pre data-lang="properties"><code><span class="tok-prop">api.endpoints.get-exampleByDate.method</span><span class="tok-punc">=</span><span class="tok-val">GET</span>
 <span class="tok-prop">api.endpoints.get-exampleByDate.reUrl</span><span class="tok-punc">=</span><span class="tok-str">/api/customer/search</span></code></pre>
     </li>
@@ -458,15 +465,54 @@ git init</code></pre>
     </li>
   </ol>
 
-  <p>Suite registration: <a href="settings.gradle.kts">settings.gradle.kts</a> auto-registers every suite dir that
+  <p>Suite registration: settings.gradle.kts auto-registers every suite dir that
   has its own <code>build.gradle.kts</code>. Mirrors CI <code>find test-suites -name build.gradle.kts</code> discovery —
   filesystem presence is the single source of truth. Drop a suite in, no settings edit needed.</p>
+
+  <!-- ════════════ Import the framework in test classes ════════════ -->
+  <h2>Import the framework in test classes</h2>
+
+  <p>When you write a new test class, import the framework library from the published Maven artifact,
+  not from a local JAR or source copy.</p>
+
+  <h3>Why the published artifact?</h3>
+  <ul>
+    <li>The framework ships as a versioned Maven artifact (<code>systems.leadex.lxtestkit:framework-bundle</code>).
+      Your test classes compile against the exact version declared in <code>gradle.properties</code>, ensuring
+      reproducibility across machines and CI.</li>
+    <li>Local JARs or classpath hacks bypass dependency management — they can silently drift from the
+      version the rest of the team uses, causing hard-to-diagnose runtime errors.</li>
+    <li>Gradle resolves the artifact from GitHub Packages (authenticated via the PAT from step 2),
+      so every developer and every CI run gets the same bytecode.</li>
+  </ul>
+
+  <h3>How to import</h3>
+  <ol>
+    <li><strong>Your suite's <code>build.gradle.kts</code> must declare the dependency:</strong>
+      <pre data-lang="kotlin"><code>dependencies {
+    implementation(platform("systems.leadex.lxtestkit:framework-bom:${lxtestkitVersion}"))
+    implementation("systems.leadex.lxtestkit:framework-bundle")
+}</code></pre>
+      <p>This is already set up for suites created from the reference layout. If you create a suite
+      from scratch, include this block so Gradle knows which framework artifact to resolve.</p>
+    </li>
+    <li><strong>In your test class, import from the framework packages:</strong>
+      <pre data-lang="java"><code>import io.leadex.aqa.testsupport.base.BaseApiTest;
+import io.leadex.aqa.testsupport.assertions.ApiResponseAssert;
+
+public class MySuiteTest extends BaseApiTest {
+    @Override
+    protected String domain() { return "my-suite"; }
+    // ...
+}</code></pre>
+    </li>
+  </ol>
 
   <!-- ════════════ 6. Set the runtime env vars ════════════ -->
   <h2><span class="step-num">6</span> Set the runtime env vars</h2>
 
   <p>The framework reads these at startup via <code>ConfigResolver</code>. For the full variable table, see
-  <a href="README.md#running-tests-locally">README.md</a>.</p>
+  README.md.</p>
 
   <h3>For local runs</h3>
 
@@ -487,7 +533,7 @@ git init</code></pre>
   <h3>For CI (GitHub Actions)</h3>
 
   <p>Variables and secrets are configured in the GitHub repository — no local <code>export</code> needed. See
-  <a href="README.md#configuration-sources">README.md</a> for the full list and where each lives (per-environment
+  README.md for the full list and where each lives (per-environment
   variables, per-environment secrets, repository-level variables/secrets).</p>
 
   <!-- ════════════ 7. Run tests ════════════ -->
@@ -514,7 +560,7 @@ git init</code></pre>
 
   <h3><span class="opt-label">Option 3</span> CI (GitHub Actions)</h3>
 
-  <p>Trigger a workflow dispatch run — see section 9 below and <a href="README.md#ci">README.md</a>.</p>
+  <p>Trigger a workflow dispatch run — see section 9 below and README.md.</p>
 
   <!-- ════════════ 8. Generate the Allure report ════════════ -->
   <h2><span class="step-num">8</span> Generate the Allure report</h2>
@@ -545,10 +591,10 @@ git init</code></pre>
     <li><strong>Populate per-environment variables</strong> (timeouts, retry config).</li>
     <li><strong>Add repository-level secrets</strong> (<code>PACKAGES_READ_TOKEN</code> for framework resolution, cloud hosting API token).</li>
     <li><strong>Add repository-level variables</strong> (base URLs per env, timeouts, etc.).</li>
-    <li><strong>Edit <code>runTests.yml</code></strong> to add new environments to the <code>environment</code> input's <code>options</code> list and extend the base-URL selection expression.</li>
+    <li><strong>Edit <code>runTests.yml</code></strong> to add new environments to the <code>environment</code> input's <code>options</code> list and extend the base-URL selection expression, or modify it to suit the needs of the project.</li>
   </ol>
 
-  <p>Full input/job/variable reference: <a href="README.md#ci">README.md</a>.</p>
+  <p>Full input/job/variable reference: README.md.</p>
 
   <!-- ════════════ Quick reference ════════════ -->
   <h2>Quick reference — add more</h2>
@@ -559,15 +605,15 @@ git init</code></pre>
       <tbody>
         <tr>
           <td>New endpoint in a suite</td>
-          <td>add to <code>domains.properties</code> + test method + schema/snapshot — <a href="README.md#adding-a-new-endpoint-to-an-existing-suite">README.md</a></td>
+          <td>add to <code>domains.properties</code> + test method + schema/snapshot — README.md</td>
         </tr>
         <tr>
           <td>New suite</td>
-          <td>drop a <code>build.gradle.kts</code> + <code>testng-&lt;suite&gt;.xml</code> under <code>test-suites/</code> — auto-registered by filesystem — <a href="README.md#adding-a-new-suite">README.md</a></td>
+          <td>drop a <code>build.gradle.kts</code> + <code>testng-&lt;suite&gt;.xml</code> under <code>test-suites/</code> — auto-registered by filesystem — README.md</td>
         </tr>
         <tr>
           <td>New environment</td>
-          <td>GitHub Environment + vars/secrets + base URL + <code>runTests.yml</code> edit — <a href="README.md#adding-a-new-environment">README.md</a></td>
+          <td>GitHub Environment + vars/secrets + base URL + <code>runTests.yml</code> edit — README.md</td>
         </tr>
         <tr>
           <td>Update framework version</td>

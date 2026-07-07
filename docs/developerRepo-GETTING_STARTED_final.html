@@ -314,7 +314,7 @@
       contain only tests, test data and CI configuration.
     </p>
     <p class="subtitle">
-      For the conceptual overview of the architecture, see <a href="README.md">README.md</a>. This doc
+      For the conceptual overview of the architecture, see <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/README.md">README.md</a>. This doc
       is the linear "do these steps in order" path.
     </p>
   </div>
@@ -357,7 +357,7 @@
 <span class="tok-prop">gpr.token</span><span class="tok-punc">=</span><span class="tok-val">&lt;PAT-with-write:packages&gt;</span></code></pre>
   <pre data-lang="sh"><code><span class="tok-cmd">chmod</span> <span class="tok-num">600</span> <span class="tok-path">~/.gradle/gradle.properties</span></code></pre>
   <p>
-    The publish config in <a href="build.gradle.kts">build.gradle.kts</a> authenticates with the
+    The publish config in <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/build.gradle.kts">build.gradle.kts</a> authenticates with the
     <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code> environment variables (the CI path). For local
     publishing, supply the same values — e.g. export them in your shell, or rely on the
     <code>gpr.user</code> / <code>gpr.token</code> fallback consumed by your environment.
@@ -413,13 +413,7 @@
     Consumer repositories depend only on <strong>framework-bundle</strong>. The remaining modules are
     implementation details.
   </p>
-  <blockquote>
-    <p><strong>Note:</strong> only the five modules above are wired in
-    <a href="settings.gradle.kts">settings.gradle.kts</a> and therefore built/published. Other module
-    directories you may see on disk (e.g. <code>framework-db-oracle</code>,
-    <code>framework-messaging-rabbitmq</code>) are <em>not</em> included in the build and are not
-    published — treat them as inactive until added to <code>settings.gradle.kts</code>.</p>
-  </blockquote>
+
 
   <!-- ════════════ 5. Understand the architecture ════════════ -->
   <h2 id="s5"><span class="step-num">5</span> Understand the architecture</h2>
@@ -532,7 +526,7 @@
     <li><code>framework-bundle</code></li>
   </ul>
   <p>
-    If any module is missing, verify it is listed in <a href="settings.gradle.kts">settings.gradle.kts</a>
+    If any module is missing, verify it is listed in <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/settings.gradle.kts">settings.gradle.kts</a>
     and that the <code>maven-publish</code> plugin applies to it.
   </p>
 
@@ -540,7 +534,7 @@
   <h2 id="s12"><span class="step-num">12</span> Bump the framework version</h2>
   <p>
     The version is a <strong>single source of truth</strong>: the <code>version</code> assignment in the
-    <code>subprojects { … }</code> block of <a href="build.gradle.kts">build.gradle.kts</a> — it applies
+    <code>subprojects { … }</code> block of <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/build.gradle.kts">build.gradle.kts</a> — it applies
     to every module at once.
   </p>
   <pre data-lang="kotlin"><code><span class="tok-kw">subprojects</span> <span class="tok-punc">{</span>

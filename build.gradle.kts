@@ -5,6 +5,7 @@ import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.api.plugins.JavaPluginExtension
 
 plugins {
     `java-library`
@@ -22,8 +23,6 @@ allprojects {
 
 subprojects {
 
-    group = "systems.leadex.lxtestkit"
-    version="1.0.6"
     plugins.withId("java-library") {
 
         apply(plugin = "maven-publish")
@@ -46,7 +45,7 @@ subprojects {
             }
         }
 
-        extensions.configure<org.gradle.api.plugins.JavaPluginExtension> {
+        extensions.configure<JavaPluginExtension> {
             toolchain {
                 languageVersion.set(JavaLanguageVersion.of(21))
             }

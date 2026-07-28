@@ -428,7 +428,7 @@
   </tr>
   <tr>
     <td><code>.hasValue()</code></td>
-    <td><code>FieldAssert</code> — Asserts the field equals an expected value. Type-aware extraction: <code>String</code>, <code>Integer</code>/<code>int</code>, <code>Long</code>, <code>Double</code>, <code>Boolean</code>.</td>
+    <td><code>FieldAssert</code> — Asserts the field equals an expected value. Type-aware extraction: <code>String</code>, <code>Integer</code>/<code>int</code>, <code>Long</code>, <code>Double</code>, <code>Boolean</code>, <code>BigDecimal</code> (scale-insensitive — matches any numeric node).</td>
     <td><code>Object</code></td>
     <td><code>.field("status", f -&gt; f.hasValue("created"))</code> / <code>.field("count", f -&gt; f.hasValue(3))</code></td>
   </tr>
@@ -487,6 +487,81 @@ ApiResponseAssert.assertThat(response)
     .hasStatus(200)
     .body()                              <span class="tok-cmt">// ← compile error: missing Consumer argument</span>
         .field("id", f -&gt; f.isPresent());</code></pre>
+
+  <!-- ════════════ Data-driven tests ════════════ -->
+  <h2 id="data-driven-tests" class="heading-wrapper"><a href="#data-driven-tests" class="heading-anchor">#</a>Data-driven tests</h2>
+  <p class="package">io.leadex.aqa.testsupport.testdata</p>
+
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>JsonDataSource.rows()</code></td>
+    <td><code>JsonDataSource</code> — Loads a JSON array of flat objects from the test classpath into a TestNG <code>@DataProvider</code> table. Column order matches the <code>columns</code> argument. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, missing columns, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test).</td>
+    <td><code>String</code> classpath resource + <code>String...</code> columns</td>
+    <td><code>JsonDataSource.rows("data/{env}/customers.json", "caseName", "customerId", "expectedStatus")</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <p>Dataset files live in the suite's <code>src/test/resources/</code>; the consumer keeps the flat test pattern — a thin <code>@DataProvider</code> method delegating to the loader, no test-side helper classes. The loader lives in the framework — never write dataset parsers in the consumer repo.</p>
+
+  <pre><code><span class="tok-cmt">// src/test/resources/data/uat/customers.json</span>
+<span class="tok-cmt">// [
+//   { "caseName": "active-customer",  "customerId": "9900083901", "expectedStatus": "ACTIVE"  },
+//   { "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }
+// ]</span>
+
+@DataProvider(name = "customers")
+public Object[][] customers() {
+    return JsonDataSource.rows("data/{env}/customers.json",
+            "caseName", "customerId", "expectedStatus");
+}
+
+@Test(dataProvider = "customers")
+public void customerHasExpectedStatus(String caseName, String customerId, String expectedStatus) {
+    var response = call("get-customer", String.class).pathParam("customerId", customerId).send();
+    ApiResponseAssert.assertThat(response)
+            .hasStatus(200)
+            .body(b -&gt; b.field("status", f -&gt; f.hasValue(expectedStatus)));
+}</code></pre>
+
+  <p>JSON→Java type contract — test method parameters must declare the matching types:</p>
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>JSON value</th>
+    <th>Java type in the row</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr><td>string</td><td><code>String</code></td></tr>
+  <tr><td>integer</td><td><code>Integer</code> / <code>Long</code></td></tr>
+  <tr><td>decimal</td><td><code>BigDecimal</code></td></tr>
+  <tr><td>boolean</td><td><code>Boolean</code></td></tr>
+  <tr><td>object</td><td><code>Map&lt;String,Object&gt;</code> (deep-unmodifiable)</td></tr>
+  <tr><td>array</td><td><code>List&lt;Object&gt;</code> (deep-unmodifiable)</td></tr>
+  <tr><td>explicit null</td><td><code>null</code></td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <ul>
+    <li><strong>Always quote string values</strong> in dataset JSON — an unquoted <code>9900083901</code> binds as <code>Long</code>, and TestNG fails with a <code>MethodMatcherException</code> naming neither the file nor the row.</li>
+    <li><strong>Decimal columns are declared <code>BigDecimal</code> in the test signature, never <code>double</code>/<code>float</code></strong> — TestNG does no <code>BigDecimal</code>→<code>double</code> conversion. Assert them response-side via <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
+    <li>Optional <code>caseName</code> column: when requested, every row's value must be a non-blank, dataset-unique string — declared first in the test signature it becomes the per-invocation anchor in the Allure report.</li>
+    <li>Nested structures are deep-unmodifiable (TestNG retry re-uses the same row array); explicit <code>null</code>s are preserved and feed <code>.bodyField(k, v)</code> directly.</li>
+  </ul>
 
   <!-- ════════════ Splunk DSL ════════════ -->
   <h2 id="splunk-dsl" class="heading-wrapper"><a href="#splunk-dsl" class="heading-anchor">#</a>Splunk DSL</h2>

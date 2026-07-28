@@ -9,7 +9,6 @@ import io.leadex.aqa.http.CorrelationIdFilter;
 import io.leadex.aqa.http.HttpClient;
 import io.leadex.aqa.http.RestAssuredHttpClient;
 import io.leadex.aqa.testsupport.client.ApiRequestBuilder;
-import io.qameta.allure.Allure;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.config.HttpClientConfig;
 import io.restassured.config.RestAssuredConfig;
@@ -70,7 +69,6 @@ public abstract class BaseApiTest {
     @BeforeMethod(alwaysRun = true)
     public void beforeEach(ITestResult result) {
         CorrelationIdFilter.set(UUID.randomUUID().toString());
-        Allure.label("parentSuite", apiName);
     }
 
     @AfterMethod(alwaysRun = true)

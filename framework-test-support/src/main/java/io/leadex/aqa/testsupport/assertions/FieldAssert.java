@@ -3,6 +3,8 @@ package io.leadex.aqa.testsupport.assertions;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.assertj.core.api.AbstractAssert;
 
+import java.math.BigDecimal;
+
 /**
  * Fluent value-level assertions for a single JSON field, scoped inside the
  * {@code field(path, f -> ...)} consumer on {@link BodyAssert}.
@@ -48,12 +50,24 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
      * Asserts the field exists and its value equals {@code expected}.
      *
      * <p>Supports {@code String}, {@code Integer}/{@code int}, {@code Long}/{@code long},
-     * {@code Double}/{@code double}, and {@code Boolean}/{@code boolean} comparisons via
-     * type-aware extraction from the {@link JsonNode}.
+     * {@code Double}/{@code double}, {@code Boolean}/{@code boolean}, and {@code BigDecimal}
+     * comparisons via type-aware extraction from the {@link JsonNode}.
+     *
+     * <p>{@code BigDecimal} expectations compare scale-insensitively against any numeric
+     * node ({@code 7.745} matches a response carrying {@code 7.7450}) — required for
+     * dataset decimals from {@code JsonDataSource}, which are always {@code BigDecimal}.
      */
     public FieldAssert hasValue(Object expected) {
         if (actual.isMissingNode()) {
             failWithMessage("Expected field '%s' to equal <%s> but field was missing", path, expected);
+        }
+        if (expected instanceof BigDecimal bd && actual.isNumber()) {
+            // compareTo is scale-insensitive; decimalValue() yields the canonical decimal
+            // (7.745, not the binary artifact), so response-side parsing needs no change
+            if (actual.decimalValue().compareTo(bd) != 0) {
+                failWithMessage("Expected field '%s' to equal <%s> but was <%s>", path, bd, actual.decimalValue());
+            }
+            return this;
         }
         Object actualValue = extractValue(actual);
         if (!expected.equals(actualValue)) {

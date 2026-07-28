@@ -533,27 +533,26 @@
   <!-- ════════════ 12. Bump the framework version ════════════ -->
   <h2 id="s12"><span class="step-num">12</span> Bump the framework version</h2>
   <p>
-    The version is a <strong>single source of truth</strong>: the <code>version</code> assignment in the
-    <code>subprojects { … }</code> block of <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/build.gradle.kts">build.gradle.kts</a> — it applies
-    to every module at once.
+    The version is a <strong>single source of truth</strong>: the <code>version</code> property in
+    <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/gradle.properties">gradle.properties</a>
+    (with <code>group</code> defined alongside it). Both apply to every module at once
+    and are consumed by <code>build.gradle.kts</code> via <code>rootProject.version</code>.
   </p>
-  <pre data-lang="kotlin"><code><span class="tok-kw">subprojects</span> <span class="tok-punc">{</span>
-    <span class="tok-prop">group</span>   <span class="tok-op">=</span> <span class="tok-str">"systems.leadex.lxtestkit"</span>
-    <span class="tok-prop">version</span> <span class="tok-op">=</span> <span class="tok-str">"1.0.5"</span>   <span class="tok-cmt">// ← bump this</span>
-<span class="tok-punc">}</span></code></pre>
+  <pre data-lang="properties"><code><span class="tok-prop">group</span><span class="tok-punc">=</span><span class="tok-val">systems.leadex.lxtestkit</span>
+<span class="tok-prop">version</span><span class="tok-punc">=</span><span class="tok-val">1.0.5</span>   <span class="tok-cmt"># ← bump this</span></code></pre>
   <blockquote class="warn">
     <p><strong>GitHub Packages does not allow overwriting an existing version.</strong> Publishing the same
     version twice fails. Increment the version immediately before publishing, after all development and
     verification is done.</p>
   </blockquote>
   <p>
-    Bump the version number in <code>build.gradle.kts</code> and in any version strings in
+    Bump the version number in <code>gradle.properties</code> and in any version strings in
     <code>README.md</code>. Commit the change before publishing.
   </p>
   <blockquote class="warn">
     <p><strong>The version shown in this guide (1.0.5) is for illustration only.</strong> The actual
     framework version will differ. Always check the current version in
-    <code>build.gradle.kts</code> subprojects block — it is the single source of truth for the
+    <code>gradle.properties</code> — it is the single source of truth for the
     framework version; <code>README.md</code> only mirrors it in consumer dependency examples.</p>
   </blockquote>
 

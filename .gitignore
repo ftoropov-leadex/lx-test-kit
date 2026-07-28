@@ -9,6 +9,7 @@
 pull_request_template.md
 .DS_Store
 .claude/
+.kimi-code/
 .idea/
 CLAUDE.md
 allure-open.sh

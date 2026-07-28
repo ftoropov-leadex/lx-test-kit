@@ -468,6 +468,9 @@ git init</code></pre>
   <p>Suite registration: settings.gradle.kts auto-registers every suite dir that
   has its own <code>build.gradle.kts</code>. Mirrors CI <code>find test-suites -name build.gradle.kts</code> discovery —
   filesystem presence is the single source of truth. Drop a suite in, no settings edit needed.</p>
+  <p>A per-suite <code>build.gradle.kts</code> only needs <code>plugins { id("java") }</code> — the framework dependency
+  and the TestNG suite XML path (<code>testng-&lt;suite-name&gt;.xml</code>) are applied from the parent
+  <code>test-suites/build.gradle.kts</code> via convention. See the reference layout for the exact one-liner.</p>
 
   <!-- ════════════ Import the framework in test classes ════════════ -->
   <h2>Import the framework in test classes</h2>
@@ -488,13 +491,18 @@ git init</code></pre>
 
   <h3>How to import</h3>
   <ol>
-    <li><strong>Your suite's <code>build.gradle.kts</code> must declare the dependency:</strong>
-      <pre data-lang="kotlin"><code>dependencies {
-    implementation(platform("systems.leadex.lxtestkit:framework-bom:${lxtestkitVersion}"))
-    implementation("systems.leadex.lxtestkit:framework-bundle")
+    <li><strong>The framework dependency is declared in the parent <code>test-suites/build.gradle.kts</code> and applied to all suite subprojects:</strong>
+      <pre data-lang="kotlin"><code><span class="tok-cmt">// test-suites/build.gradle.kts</span>
+<span class="tok-kw">subprojects</span> {
+    <span class="tok-fn">plugins.withId</span>(<span class="tok-str">"java"</span>) {
+        <span class="tok-kw">dependencies</span> {
+            <span class="tok-str">"testImplementation"</span>(<span class="tok-str">"systems.leadex.lxtestkit:framework-bundle:${property("lxtestkit.version")}"</span>)
+        }
+    }
 }</code></pre>
-      <p>This is already set up for suites created from the reference layout. If you create a suite
-      from scratch, include this block so Gradle knows which framework artifact to resolve.</p>
+      <p>The same parent also derives the TestNG suite XML path by convention
+      (<code>testng-${project.name}.xml</code>). A per-suite <code>build.gradle.kts</code> only needs the
+      <code>java</code> plugin marker; everything else is inherited.</p>
     </li>
     <li><strong>In your test class, import from the framework packages:</strong>
       <pre data-lang="java"><code>import io.leadex.aqa.testsupport.base.BaseApiTest;
@@ -609,7 +617,7 @@ public class MySuiteTest extends BaseApiTest {
         </tr>
         <tr>
           <td>New suite</td>
-          <td>drop a <code>build.gradle.kts</code> + <code>testng-&lt;suite&gt;.xml</code> under <code>test-suites/</code> — auto-registered by filesystem — README.md</td>
+          <td>drop a <code>build.gradle.kts</code> (<code>plugins { id("java") }</code> only) + <code>testng-&lt;suite&gt;.xml</code> under <code>test-suites/</code> — auto-registered, framework deps + TestNG config inherited from parent — README.md</td>
         </tr>
         <tr>
           <td>New environment</td>

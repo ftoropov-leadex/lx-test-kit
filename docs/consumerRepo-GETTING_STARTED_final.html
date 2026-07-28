@@ -419,7 +419,7 @@ git init</code></pre>
 
   <p>gradle.properties:</p>
 
-  <pre data-lang="properties"><code><span class="tok-prop">lxtestkit.version</span><span class="tok-punc">=</span><span class="tok-num">1.0.5</span></code></pre>
+  <pre data-lang="properties"><code><span class="tok-prop">lxtestkit.version</span><span class="tok-punc">=</span><span class="tok-num">1.0.7</span></code></pre>
 
   <p>Every suite pulls <code>framework-bundle:${lxtestkit.version}</code> via
   test-suites/build.gradle.kts. Bump this one line when a new framework
@@ -515,6 +515,72 @@ public class MySuiteTest extends BaseApiTest {
 }</code></pre>
     </li>
   </ol>
+
+  <!-- ════════════ Data-driven tests (JSON datasets) ════════════ -->
+  <h2>Data-driven tests (JSON datasets)</h2>
+
+  <p>When the same test logic must run against many input rows, keep the rows in a JSON dataset file
+  under the suite's <code>src/test/resources/data/</code> and load them with the framework's
+  <code>JsonDataSource</code> — a thin <code>@DataProvider</code> method delegating to the loader, no
+  test-side helper classes. <strong>The loader lives in the framework — never write dataset parsers in
+  the consumer repo.</strong></p>
+
+  <p>Dataset — <code>src/test/resources/data/uat/customers.json</code>:</p>
+  <pre data-lang="json"><code>[
+  { "caseName": "active-customer",  "customerId": "9900083901", "expectedStatus": "ACTIVE"  },
+  { "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }
+]</code></pre>
+
+  <pre data-lang="java"><code>@DataProvider(name = "customers")
+public Object[][] customers() {
+    return JsonDataSource.rows("data/{env}/customers.json",
+            "caseName", "customerId", "expectedStatus");
+}
+
+@Test(dataProvider = "customers")
+public void customerHasExpectedStatus(String caseName, String customerId, String expectedStatus) {
+    var response = call("get-customer", String.class).pathParam("customerId", customerId).send();
+    ApiResponseAssert.assertThat(response)
+            .hasStatus(200)
+            .body(b -&gt; b.field("status", f -&gt; f.hasValue(expectedStatus)));
+}</code></pre>
+
+  <ul>
+    <li>The <code>{env}</code> token in the path resolves from the existing <code>FRAMEWORK_ENV</code>
+      env var (step 6) — every occurrence is replaced, an unset var fails fast. No new wiring; no token
+      → the path is used as-is.</li>
+    <li>Column order in the result matches the <code>columns</code> argument. Failures name the resource,
+      row, and column; duplicate JSON keys fail the run instead of silently overwriting.</li>
+    <li>An empty dataset (<code>[]</code>) is a valid QA state — TestNG skips the test.</li>
+  </ul>
+
+  <p>JSON→Java type contract — test method parameters must declare the matching types:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>JSON value</th><th>Java type in the row</th></tr></thead>
+      <tbody>
+        <tr><td>string</td><td><code>String</code></td></tr>
+        <tr><td>integer</td><td><code>Integer</code> / <code>Long</code></td></tr>
+        <tr><td>decimal</td><td><code>BigDecimal</code></td></tr>
+        <tr><td>boolean</td><td><code>Boolean</code></td></tr>
+        <tr><td>object</td><td><code>Map&lt;String,Object&gt;</code> (deep-unmodifiable)</td></tr>
+        <tr><td>array</td><td><code>List&lt;Object&gt;</code> (deep-unmodifiable)</td></tr>
+        <tr><td>explicit null</td><td><code>null</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul>
+    <li><strong>Always quote string values</strong> in dataset JSON — an unquoted <code>9900083901</code>
+      binds as <code>Long</code>, and TestNG fails with a <code>MethodMatcherException</code> naming
+      neither the file nor the row.</li>
+    <li><strong>Decimal columns are declared <code>BigDecimal</code> in the test signature, never
+      <code>double</code>/<code>float</code></strong> — TestNG does no <code>BigDecimal</code>→<code>double</code>
+      conversion. Assert them response-side via <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
+    <li>Optional <code>caseName</code> column: when requested, every row's value must be a non-blank,
+      dataset-unique string — declared first in the test signature it becomes the per-invocation anchor
+      in the Allure report.</li>
+  </ul>
 
   <!-- ════════════ 6. Set the runtime env vars ════════════ -->
   <h2><span class="step-num">6</span> Set the runtime env vars</h2>

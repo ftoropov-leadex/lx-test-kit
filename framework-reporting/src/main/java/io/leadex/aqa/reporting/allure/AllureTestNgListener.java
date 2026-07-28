@@ -46,7 +46,10 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
     // after the suite finishes — populates the Allure Environment and Executors widgets.
     @Override
     public void onFinish(ISuite suite) {
-        String outputDir = EnvResolver.string("ALLURE_ENV_DIR", "allure-results");
+        // Default to the directory Allure itself writes results to, so the widget inputs
+        // don't land in a stray sibling dir. Precedence: ALLURE_ENV_DIR → allure.results.directory → allure-results
+        String outputDir = EnvResolver.string("ALLURE_ENV_DIR",
+            System.getProperty("allure.results.directory", "allure-results"));
         try {
             String env = EnvResolver.string("FRAMEWORK_ENV", "dev");
             Properties props = new Properties();

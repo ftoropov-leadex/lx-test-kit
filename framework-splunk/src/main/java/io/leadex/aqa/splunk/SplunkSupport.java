@@ -8,15 +8,19 @@ import io.leadex.aqa.splunk.model.SplunkSearchResponse;
 // Eliminates @BeforeClass/@AfterClass boilerplate and manual client construction in every test class.
 public final class SplunkSupport {
 
-    // Shared client initialised once from system properties. Session key is re-obtained on 401.
-    private static final SplunkClient CLIENT =
-        new SplunkClient(SplunkConnectionConfig.fromSystem());
+    // Initialization-on-demand holder: the client is built on first actual use, not at class load.
+    // Suites that never call Splunk no longer require SPLUNK_* env vars to be present; a missing
+    // var surfaces at the first real Splunk call as IllegalStateException naming the var.
+    private static final class Holder {
+        private static final SplunkClient CLIENT =
+            new SplunkClient(SplunkConnectionConfig.fromSystem());
+    }
 
     private SplunkSupport() {}
 
     // Returns the shared SplunkClient for tests that need to issue custom queries directly.
     public static SplunkClient client() {
-        return CLIENT;
+        return Holder.CLIENT;
     }
 
     // High-level helper: extracts correlationId from the API response, builds the standard query,
@@ -24,6 +28,6 @@ public final class SplunkSupport {
     public static SplunkSearchResponse awaitLogsFor(ApiResponse<?> response, String index) {
         String corrId = response.correlationId();
         String query = SplunkQueries.forCorrelationId(corrId, index);
-        return CLIENT.awaitNonEmpty(query);
+        return client().awaitNonEmpty(query);
     }
 }

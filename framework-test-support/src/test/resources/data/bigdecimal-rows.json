@@ -1,0 +1,4 @@
+[
+  { "caseName": "non-dyadic",       "amount": 7.745  },
+  { "caseName": "scale-preserved",  "amount": 100.00 }
+]

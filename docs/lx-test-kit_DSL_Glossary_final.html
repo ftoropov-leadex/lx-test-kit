@@ -344,7 +344,7 @@
     <td><code>.body()</code></td>
     <td><code>AbstractApiResponseAssert</code> — Parses the raw JSON response body and opens a <code>BodyAssert</code> scope via consumer lambda. The raw body is parsed once and cached.</td>
     <td><code>Consumer&lt;BodyAssert&gt;</code></td>
-    <td><code>ApiResponseAssert.assertThat(response).hasStatus(200).body(b -&gt; b.field("id").isPresent())</code></td>
+    <td><code>ApiResponseAssert.assertThat(response).hasStatus(200).body(b -&gt; b.field("id", f -&gt; f.isPresent()))</code></td>
   </tr>
   </tbody>
   </table>
@@ -366,13 +366,13 @@
     <td><code>.at()</code></td>
     <td><code>BodyAssert</code> — Navigates to an array element by index, opens a nested <code>BodyAssert</code> scope. Requires the body to be a non-empty array at that index.</td>
     <td><code>int</code> + <code>Consumer&lt;BodyAssert&gt;</code></td>
-    <td><code>.body(b -&gt; b.at(2, el -&gt; el.field("name").hasValue("third")))</code></td>
+    <td><code>.body(b -&gt; b.at(2, el -&gt; el.field("name", f -&gt; f.hasValue("third"))))</code></td>
   </tr>
   <tr>
     <td><code>.first()</code></td>
     <td><code>BodyAssert</code> — Shorthand for <code>.at(0, …)</code>. Navigates to the first array element, opens a nested <code>BodyAssert</code> scope.</td>
     <td><code>Consumer&lt;BodyAssert&gt;</code></td>
-    <td><code>.body(b -&gt; b.first(el -&gt; el.field("id").isNotBlank()))</code></td>
+    <td><code>.body(b -&gt; b.first(el -&gt; el.field("id", f -&gt; f.isNotBlank())))</code></td>
   </tr>
   <tr>
     <td><code>.field()</code></td>
@@ -504,10 +504,10 @@ ApiResponseAssert.assertThat(response)
   </thead>
   <tbody>
   <tr>
-    <td><code>JsonDataSource.rows()</code></td>
-    <td><code>JsonDataSource</code> — Loads a JSON array of flat objects from the test classpath into a TestNG <code>@DataProvider</code> table. Column order matches the <code>columns</code> argument. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, missing columns, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test).</td>
+    <td><code>.rows()</code></td>
+    <td><code>JsonDataSource</code> — Loads a JSON array of flat-keyed objects (each top-level key is a column; values may be any JSON, incl. nested objects/arrays) from the test classpath into a TestNG <code>@DataProvider</code> table. Column order matches the <code>columns</code> argument. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, missing columns, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test).</td>
     <td><code>String</code> classpath resource + <code>String...</code> columns</td>
-    <td><code>JsonDataSource.rows("data/{env}/customers.json", "caseName", "customerId", "expectedStatus")</code></td>
+    <td><code>JsonDataSource.rows("data/{env}/customers.json", "caseName", "customerId", "expectedStatus")</code><br><br><code>// data/uat/customers.json</code><br><code>[</code><br><code>&nbsp;&nbsp;{ "caseName": "active-customer",&nbsp;&nbsp;"customerId": "9900083901", "expectedStatus": "ACTIVE"&nbsp;&nbsp;},</code><br><code>&nbsp;&nbsp;{ "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }</code><br><code>]</code></td>
   </tr>
   </tbody>
   </table>
@@ -517,22 +517,53 @@ ApiResponseAssert.assertThat(response)
 
   <pre><code><span class="tok-cmt">// src/test/resources/data/uat/customers.json</span>
 <span class="tok-cmt">// [
-//   { "caseName": "active-customer",  "customerId": "9900083901", "expectedStatus": "ACTIVE"  },
-//   { "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }
+//   {
+//     "caseName":        "premium-active",
+//     "customerId":      "9900083901",
+//     "expectedStatus":  "ACTIVE",
+//     "expectedLimit":   100.00,                                // decimal → BigDecimal, scale preserved
+//     "expectedScore":   42,                                    // integer → Integer
+//     "expectedVip":     true,                                  // boolean → Boolean
+//     "expectedAddress": { "city": "Amman", "zip": "11183" },   // object → Map (deep-unmodifiable)
+//     "expectedTags":    [ "premium", "sms" ],                  // array  → List (deep-unmodifiable)
+//     "previousId":      null                                   // explicit null → null
+//   },
+//   {
+//     "caseName":        "standard-blocked",
+//     "customerId":      "9900083902",
+//     "expectedStatus":  "BLOCKED",
+//     "expectedLimit":   50.5,
+//     "expectedScore":   7,
+//     "expectedVip":     false,
+//     "expectedAddress": { "city": "Irbid", "zip": "21110" },
+//     "expectedTags":    [ "sms" ],
+//     "previousId":      "9900083800"                           // same column, non-null here
+//   }
 // ]</span>
 
 @DataProvider(name = "customers")
 public Object[][] customers() {
     return JsonDataSource.rows("data/{env}/customers.json",
-            "caseName", "customerId", "expectedStatus");
+            "caseName", "customerId", "expectedStatus", "expectedLimit",
+            "expectedScore", "expectedVip", "expectedAddress", "expectedTags", "previousId");
 }
 
 @Test(dataProvider = "customers")
-public void customerHasExpectedStatus(String caseName, String customerId, String expectedStatus) {
+public void customerMatchesDataset(String caseName, String customerId, String expectedStatus,
+        BigDecimal expectedLimit, Integer expectedScore, Boolean expectedVip,
+        Map&lt;String, Object&gt; expectedAddress, List&lt;Object&gt; expectedTags, Object previousId) {
     var response = call("get-customer", String.class).pathParam("customerId", customerId).send();
+
     ApiResponseAssert.assertThat(response)
             .hasStatus(200)
-            .body(b -&gt; b.field("status", f -&gt; f.hasValue(expectedStatus)));
+            .body(b -&gt; b
+                    .field("status",       f -&gt; f.hasValue(expectedStatus))              <span class="tok-cmt">// string</span>
+                    .field("limit",        f -&gt; f.hasValue(expectedLimit))               <span class="tok-cmt">// BigDecimal — scale-insensitive: 100.00 matches 100.0</span>
+                    .field("score",        f -&gt; f.hasValue(expectedScore))               <span class="tok-cmt">// integer</span>
+                    .field("vip",          f -&gt; f.hasValue(expectedVip))                 <span class="tok-cmt">// boolean</span>
+                    .field("address.city", f -&gt; f.hasValue(expectedAddress.get("city"))) <span class="tok-cmt">// object column → dot-path into response</span>
+                    .field("tags.0",       f -&gt; f.hasValue(expectedTags.get(0))));       <span class="tok-cmt">// array column → indexed path</span>
+    <span class="tok-cmt">// previousId (null) is request-side material: .bodyField("previousId", previousId) — nulls are skipped, field omitted</span>
 }</code></pre>
 
   <p>JSON→Java type contract — test method parameters must declare the matching types:</p>
@@ -596,7 +627,7 @@ public void customerHasExpectedStatus(String caseName, String customerId, String
   </thead>
   <tbody>
   <tr>
-    <td><code>SplunkQueries.forCorrelationId()</code></td>
+    <td><code>.forCorrelationId()</code></td>
     <td><code>SplunkQueries</code> — Pre-built SPL template. Produces <code>search index=&lt;index&gt; correlationId="&lt;corrId&gt;" | spath | table correlationId, message, tracePoint, applicationName, timestamp</code>. Overload accepts custom table field list. Keeps log field names in one place. Called internally by <code>SplunkSupport.awaitLogsFor()</code>; can also be called directly.</td>
     <td><code>String</code> corrId + <code>String</code> index + optional <code>String</code> tableFields</td>
     <td><code>String spl = SplunkQueries.forCorrelationId(corrId, "mule_dev");</code></td>

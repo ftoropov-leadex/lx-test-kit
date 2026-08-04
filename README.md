@@ -79,7 +79,7 @@ public class PostmanEchoIntegrationTest extends BaseApiTest {
 Call flow: `call()` → `ApiRequestBuilder` → `UrlResolver` → `RestAssuredHttpClient` → `CorrelationIdFilter`.
 Allure HTTP steps are attached automatically by `AllureHttpFilter`. Do **not** add `Allure.step()` manually — `AllureAspectJ` LTW generates assertion steps automatically.
 
-`.query()`, `.pathParam()`, `.bodyField()` silently skip `null` values — no null-guard needed.
+Explicit-null rule — no hidden transformations: `.query()`, `.pathParam()`, `.header()` send `null` as the literal string `"null"`; `.bodyField()` writes JSON `null`. Empty string is sent empty. The only way to omit a parameter is to not call the setter.
 
 ### AssertJ DSL
 

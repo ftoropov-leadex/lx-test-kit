@@ -16,12 +16,29 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Loads a JSON dataset file (classpath resource in the consumer repo) into a TestNG
- * {@code @DataProvider} table. Consumers keep the flat test pattern: a thin
- * {@code @DataProvider} method delegating to {@link #rows(String, String...)}, no
- * test-side helper classes.
+ * Extracts test data from a JSON dataset file (classpath resource in the consumer repo)
+ * into a TestNG {@code @DataProvider} table — one {@link DataRow} per dataset object.
+ * Consumers keep the flat test pattern: a thin {@code @DataProvider} method delegating
+ * to {@link #from(String)}, no test-side helper classes:
  *
- * <p>Expected dataset shape — a JSON array of flat objects:
+ * <pre>{@code
+ * @DataProvider(name = "customers")
+ * public Object[][] customers() {
+ *     return ExtractTestData.from("data/{env}/customers.json");
+ * }
+ *
+ * @Test(dataProvider = "customers")
+ * public void customerMatchesDataset(DataRow row) {
+ *     var response = call("get-customer", String.class)
+ *             .pathParam("customerId", row.getString("customerId")).send();
+ * }
+ * }</pre>
+ *
+ * <p>Never static-import {@code from} — the qualified form is what reads as a sentence.
+ *
+ * <p>Expected dataset shape — a JSON array of flat-keyed objects (top-level keys are
+ * the fields a {@link DataRow} exposes; values may be any JSON, including nested
+ * objects/arrays):
  * <pre>{@code
  * [
  *   { "customerId": "9900083901", "expectedStatus": "ACTIVE" },
@@ -35,13 +52,13 @@ import java.util.Map;
  * fallback, an unset var fails fast before any I/O). No token → the path is used
  * as-is.
  *
- * <p>{@code caseName} convention: when {@code "caseName"} is among the requested
- * columns, every row's value is validated to be a non-blank string, unique across
- * the dataset. It is passed through as an ordinary column — declared first in the
- * test signature it becomes the readable per-invocation anchor in reports, and row
- * identity survives dataset reordering.
+ * <p>{@code caseName} convention: whenever a row contains a {@code "caseName"} key, its
+ * value is validated to be a non-blank string, unique across the dataset. Rows without
+ * the key are allowed, but including it remains the recommended practice — it anchors
+ * the readable per-invocation entry in reports ({@link DataRow#toString()} /
+ * {@link DataRow#caseName()}) and row identity survives dataset reordering.
  */
-public final class JsonDataSource {
+public final class ExtractTestData {
 
     // Private read-side-only mapper — never reuse or mutate JacksonProvider.defaultMapper()
     // (shared static; enabling parser features on it is global-state mutation).
@@ -55,39 +72,14 @@ public final class JsonDataSource {
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .build();
 
-    private JsonDataSource() {}
+    private ExtractTestData() {}
 
     /**
-     * Loads a JSON array of flat objects from the test classpath and returns
-     * a TestNG data-provider table. Column order in the result matches the
-     * {@code columns} argument order. Fails fast: per-row structural problems
-     * name the resource, row index, and column; root-level parse failures name
-     * the resource with Jackson's line/column detail.
-     *
-     * <p>JSON→Java type contract — test method parameters must declare the
-     * matching types:
-     *
-     * <table border="1">
-     *   <caption>JSON to Java type mapping</caption>
-     *   <tr><th>JSON value</th><th>Java type in the row</th></tr>
-     *   <tr><td>string</td><td>{@code String}</td></tr>
-     *   <tr><td>integer</td><td>{@code Integer} / {@code Long}</td></tr>
-     *   <tr><td>decimal</td><td>{@code BigDecimal}</td></tr>
-     *   <tr><td>boolean</td><td>{@code Boolean}</td></tr>
-     *   <tr><td>object</td><td>{@code Map<String,Object>} (deep-unmodifiable)</td></tr>
-     *   <tr><td>array</td><td>{@code List<Object>} (deep-unmodifiable)</td></tr>
-     *   <tr><td>explicit null</td><td>{@code null}</td></tr>
-     * </table>
-     *
-     * <p>Two authoring rules for dataset JSON:
-     * <ul>
-     *   <li><b>Always quote string values.</b> An unquoted {@code 9900083901} binds as
-     *       a numeric type and TestNG fails with a {@code MethodMatcherException} naming
-     *       neither the file nor the row.</li>
-     *   <li><b>Decimal columns are declared {@code BigDecimal} in the test signature,
-     *       never {@code double}/{@code float}</b> — TestNG does no BigDecimal→double
-     *       conversion.</li>
-     * </ul>
+     * Loads a JSON array of flat-keyed objects from the test classpath and returns
+     * a TestNG data-provider table — one {@link DataRow} per dataset object, in file
+     * order. Typed values are extracted via the {@link DataRow} getters at use sites;
+     * see {@link DataRow} for the JSON→Java type contract and the missing-key /
+     * explicit-null / wrong-type accessor semantics.
      *
      * <p>Nested structures are returned deep-unmodifiable: TestNG retry re-invokes the
      * test with the same {@code Object[]}, so a mutating test would otherwise leak the
@@ -95,18 +87,13 @@ public final class JsonDataSource {
      *
      * @param classpathResource dataset path on the test classpath; may contain the
      *                          {@code {env}} token (resolved from {@code FRAMEWORK_ENV})
-     * @param columns           columns to extract, in result order; at least one required
-     * @return one {@code Object[]} per dataset row, in file order
-     * @throws IllegalArgumentException if no columns are requested
-     * @throws IllegalStateException    if {@code FRAMEWORK_ENV} is required but unset,
-     *                                  the resource is missing, the JSON is malformed, or a
-     *                                  row violates the structural / {@code caseName} contract
+     * @return one single-element {@code Object[]} (a {@link DataRow}) per dataset row,
+     *         in file order; an empty dataset returns zero rows (TestNG skips the test)
+     * @throws IllegalStateException if {@code FRAMEWORK_ENV} is required but unset,
+     *                               the resource is missing, the JSON is malformed, or a
+     *                               row violates the structural / {@code caseName} contract
      */
-    public static Object[][] rows(String classpathResource, String... columns) {
-        if (columns == null || columns.length == 0) {
-            throw new IllegalArgumentException("at least one column must be requested");
-        }
-
+    public static Object[][] from(String classpathResource) {
         String path = classpathResource.contains("{env}")
                 ? classpathResource.replace("{env}", EnvResolver.required("FRAMEWORK_ENV"))
                 : classpathResource;
@@ -122,8 +109,7 @@ public final class JsonDataSource {
             return new Object[0][];
         }
 
-        boolean caseNameRequested = List.of(columns).contains("caseName");
-        Map<String, Integer> caseNameFirstRow = caseNameRequested ? new LinkedHashMap<>() : null;
+        Map<String, Integer> caseNameFirstRow = new LinkedHashMap<>();
 
         Object[][] rows = new Object[dataset.size()][];
         for (int i = 0; i < dataset.size(); i++) {
@@ -132,18 +118,12 @@ public final class JsonDataSource {
                 throw new IllegalStateException("Dataset [" + path + "], row " + i
                         + ": expected an object but was " + jsonTypeName(element));
             }
-            Object[] row = new Object[columns.length];
-            for (int c = 0; c < columns.length; c++) {
-                if (!rowMap.containsKey(columns[c])) {
-                    throw new IllegalStateException("Dataset [" + path + "], row " + i
-                            + ": missing column '" + columns[c] + "'");
-                }
-                row[c] = toDeepUnmodifiable(rowMap.get(columns[c]));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> rowValues = (Map<String, Object>) toDeepUnmodifiable(rowMap);
+            if (rowValues.containsKey("caseName")) {
+                validateCaseName(path, i, rowValues.get("caseName"), caseNameFirstRow);
             }
-            if (caseNameRequested) {
-                validateCaseName(path, i, rowMap.get("caseName"), caseNameFirstRow);
-            }
-            rows[i] = row;
+            rows[i] = new Object[]{ new DataRow(path, i, rowValues) };
         }
         return rows;
     }
@@ -201,7 +181,7 @@ public final class JsonDataSource {
         return value;
     }
 
-    private static String jsonTypeName(Object value) {
+    static String jsonTypeName(Object value) {
         if (value == null)            return "null";
         if (value instanceof Map)     return "object";
         if (value instanceof List)    return "array";

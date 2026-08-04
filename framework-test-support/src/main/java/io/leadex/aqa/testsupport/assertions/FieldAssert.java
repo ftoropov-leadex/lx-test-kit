@@ -55,7 +55,7 @@ public final class FieldAssert extends AbstractAssert<FieldAssert, JsonNode> {
      *
      * <p>{@code BigDecimal} expectations compare scale-insensitively against any numeric
      * node ({@code 7.745} matches a response carrying {@code 7.7450}) — required for
-     * dataset decimals from {@code JsonDataSource}, which are always {@code BigDecimal}.
+     * dataset decimals from {@code ExtractTestData}, which are always {@code BigDecimal}.
      */
     public FieldAssert hasValue(Object expected) {
         if (actual.isMissingNode()) {

@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Self-contained by design: JDK-native mock server, no {@code BaseApiTest},
  * no env vars, no {@code domains.properties}.
  */
-public class JsonDataSourceTest {
+public class ExtractTestDataTest {
 
     private static final String DATASET = "data/bigdecimal-rows.json";
 
@@ -61,25 +61,25 @@ public class JsonDataSourceTest {
 
     @Test
     public void datasetDecimalsArriveAsExactScaleBigDecimal() {
-        Object[][] rows = JsonDataSource.rows(DATASET, "caseName", "amount");
+        Object[][] rows = ExtractTestData.from(DATASET);
 
         assertThat(rows.length).isEqualTo(2);
-        assertThat(rows[0][1]).isInstanceOf(BigDecimal.class);
-        assertThat(rows[0][1].toString()).isEqualTo("7.745");
-        assertThat(rows[1][1]).isInstanceOf(BigDecimal.class);
-        assertThat(rows[1][1].toString()).isEqualTo("100.00");
+        assertThat(((DataRow) rows[0][0]).getDecimal("amount")).isInstanceOf(BigDecimal.class);
+        assertThat(((DataRow) rows[0][0]).getDecimal("amount").toString()).isEqualTo("7.745");
+        assertThat(((DataRow) rows[1][0]).getDecimal("amount")).isInstanceOf(BigDecimal.class);
+        assertThat(((DataRow) rows[1][0]).getDecimal("amount").toString()).isEqualTo("100.00");
     }
 
     @Test
     public void bodyFieldWritesExactDecimalOnTheWire() {
-        Object[][] rows = JsonDataSource.rows(DATASET, "caseName", "amount");
+        Object[][] rows = ExtractTestData.from(DATASET);
         RestAssuredHttpClient client = new RestAssuredHttpClient(
                 new RequestSpecBuilder().setContentType(ContentType.JSON).build());
         EndpointDefinition capture = new EndpointDefinition(HttpVerb.POST, "/capture");
 
         for (Object[] row : rows) {
             new ApiRequestBuilder<>(client, baseUrl, capture, String.class)
-                    .bodyField("amount", row[1])
+                    .bodyField("amount", ((DataRow) row[0]).getDecimal("amount"))
                     .send();
         }
 

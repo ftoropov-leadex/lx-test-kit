@@ -402,7 +402,7 @@
     <thead><tr><th>Module</th><th>Responsibility</th></tr></thead>
     <tbody>
       <tr><td><code>framework-core</code></td><td>HTTP client abstraction, configuration, URL resolution, runtime model classes</td></tr>
-      <tr><td><code>framework-test-support</code></td><td>Base test classes, fluent request builder, assertion DSL, retry mechanism, schema &amp; snapshot validation</td></tr>
+      <tr><td><code>framework-test-support</code></td><td>Base test classes, fluent request builder, assertion DSL, test-data extraction (JSON datasets → TestNG providers), retry mechanism, schema &amp; snapshot validation</td></tr>
       <tr><td><code>framework-reporting</code></td><td>Allure integration, automatic HTTP attachments, AspectJ instrumentation, logging integration</td></tr>
       <tr><td><code>framework-splunk</code></td><td>Splunk client, polling utilities and assertion DSL</td></tr>
       <tr><td><code>framework-bundle</code></td><td>Umbrella artifact re-exporting all public framework modules</td></tr>
@@ -461,7 +461,7 @@
   <p>This runs the complete verification pipeline:</p>
   <ul>
     <li>compiles every module;</li>
-    <li>compiles and verifies all modules (no module-level tests are present yet — the <code>test</code> task is a no-op);</li>
+    <li>runs module-level unit tests where present (currently <code>framework-test-support</code> — dataset-loading and assertion round-trips);</li>
     <li>packages every artifact (including the <code>javadoc</code> and <code>sources</code> jars — the build applies <code>withJavadocJar()</code> / <code>withSourcesJar()</code>);</li>
     <li>prepares publishable Maven packages.</li>
   </ul>
@@ -672,7 +672,7 @@
   </blockquote>
 
   <div class="footer">
-    Framework repository · <code>lx-test-kit</code> · group <code>systems.leadex.lxtestkit</code> · v1.0.6
+    Framework repository · <code>lx-test-kit</code> · group <code>systems.leadex.lxtestkit</code> · v1.0.8
   </div>
 
 </div>

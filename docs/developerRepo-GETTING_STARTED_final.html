@@ -350,17 +350,15 @@
   <!-- ════════════ 2. Configure GitHub Packages credentials ════════════ -->
   <h2 id="s2"><span class="step-num">2</span> Configure GitHub Packages credentials</h2>
   <p>
-    Only needed for publishing. Create <code>~/.gradle/gradle.properties</code> —
-    <strong>outside</strong> this repository, never committed:
+    Only needed for publishing. Export the credentials as environment variables —
+    <strong>never</strong> commit them:
   </p>
-  <pre data-lang="properties"><code><span class="tok-prop">gpr.user</span><span class="tok-punc">=</span><span class="tok-val">&lt;github-username&gt;</span>
-<span class="tok-prop">gpr.token</span><span class="tok-punc">=</span><span class="tok-val">&lt;PAT-with-write:packages&gt;</span></code></pre>
-  <pre data-lang="sh"><code><span class="tok-cmd">chmod</span> <span class="tok-num">600</span> <span class="tok-path">~/.gradle/gradle.properties</span></code></pre>
+  <pre data-lang="sh"><code><span class="tok-kw">export</span> <span class="tok-var">GITHUB_ACTOR</span><span class="tok-punc">=</span><span class="tok-val">&lt;github-username&gt;</span>
+<span class="tok-kw">export</span> <span class="tok-var">GITHUB_TOKEN</span><span class="tok-punc">=</span><span class="tok-val">&lt;PAT-with-write:packages&gt;</span></code></pre>
   <p>
     The publish config in <a href="https://github.com/ftoropov-leadex/lx-test-kit/blob/main/build.gradle.kts">build.gradle.kts</a> authenticates with the
-    <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code> environment variables (the CI path). For local
-    publishing, supply the same values — e.g. export them in your shell, or rely on the
-    <code>gpr.user</code> / <code>gpr.token</code> fallback consumed by your environment.
+    <code>GITHUB_ACTOR</code> / <code>GITHUB_TOKEN</code> environment variables — the same variables
+    the CI path uses, so local publishing and CI need no separate setup.
   </p>
 
   <!-- ════════════ 3. Open the project ════════════ -->
@@ -565,8 +563,7 @@
   <p>
     This builds every module, runs the verification pipeline, generates Maven metadata, and uploads each
     published module to <code>https://maven.pkg.github.com/ftoropov-leadex/lx-test-kit</code>.
-    Requires <code>GITHUB_ACTOR</code> + <code>GITHUB_TOKEN</code> (or the <code>gpr.user</code> /
-    <code>gpr.token</code> fallback from step 2).
+    Requires <code>GITHUB_ACTOR</code> + <code>GITHUB_TOKEN</code> (step 2).
   </p>
   <h2 id="release-flow" style="color: var(--heading); border-bottom: 1px solid var(--border);"><span class="step-num">★</span> Full release workflow (end-to-end)</h2>
   <blockquote>

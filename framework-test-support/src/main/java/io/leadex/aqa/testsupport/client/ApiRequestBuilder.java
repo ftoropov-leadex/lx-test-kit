@@ -11,8 +11,12 @@ import java.util.Map;
 /**
  * Fluent builder for a single API request.
  *
- * <p>Null-omit rule: {@link #query}, {@link #header}, {@link #pathParam}, and {@link #bodyField}
- * silently skip {@code null} values — the setter is a no-op when {@code v == null}.
+ * <p>Explicit-null rule — no hidden transformations, what you pass is what goes on the
+ * wire: {@code null} passed to {@link #query}, {@link #header}, or {@link #pathParam}
+ * is sent as the literal string {@code "null"}; {@code null} passed to
+ * {@link #bodyField} is written as JSON {@code null}. Empty string is sent empty.
+ * The only way to omit a parameter is to not call the setter. This enables negative
+ * testing — deliberately sending {@code "null"}, empty, or arbitrary values.
  *
  * <p>Headers guard: {@link #header} populates the map but {@link #send()} throws
  * {@link UnsupportedOperationException} if the map is non-empty — per-call header wiring
@@ -38,31 +42,34 @@ public final class ApiRequestBuilder<T> {
         this.responseType = responseType;
     }
 
-    /** Adds a query parameter. Null values are silently skipped. */
+    /** Adds a query parameter. A {@code null} value is sent as the literal string {@code "null"}. */
     public ApiRequestBuilder<T> query(String k, Object v) {
-        if (v != null) query.put(k, v);
+        query.put(k, v == null ? "null" : v);
         return this;
     }
 
     /**
-     * Adds a request header. Null values are silently skipped.
+     * Adds a request header. A {@code null} value is sent as the literal string {@code "null"}.
      * Note: header wiring is not yet supported — {@link #send()} throws if the map is non-empty.
      */
     public ApiRequestBuilder<T> header(String k, String v) {
-        if (v != null) headers.put(k, v);
+        headers.put(k, v == null ? "null" : v);
         return this;
     }
 
-    /** Adds a path parameter for {@code {key}} substitution in relUrl. Null values are silently skipped. */
+    /**
+     * Adds a path parameter for {@code {key}} substitution in relUrl.
+     * A {@code null} value is sent as the literal string {@code "null"}.
+     */
     public ApiRequestBuilder<T> pathParam(String k, Object v) {
-        if (v != null) pathParams.put(k, v);
+        pathParams.put(k, v == null ? "null" : v);
         return this;
     }
 
-    /** Adds a single field to the JSON request body. Null values are silently skipped. */
+    /** Adds a single field to the JSON request body. A {@code null} value is written as JSON {@code null}. */
     public ApiRequestBuilder<T> bodyField(String k, Object v) {
         if (bodyFields == null) bodyFields = new LinkedHashMap<>();
-        if (v != null) bodyFields.put(k, v);
+        bodyFields.put(k, v);
         return this;
     }
 

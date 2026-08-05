@@ -504,10 +504,22 @@ ApiResponseAssert.assertThat(response)
   </thead>
   <tbody>
   <tr>
-    <td><code>.rows()</code></td>
-    <td><code>JsonDataSource</code> — Loads a JSON array of flat-keyed objects (each top-level key is a column; values may be any JSON, incl. nested objects/arrays) from the test classpath into a TestNG <code>@DataProvider</code> table. Column order matches the <code>columns</code> argument. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, missing columns, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test).</td>
-    <td><code>String</code> classpath resource + <code>String...</code> columns</td>
-    <td><code>JsonDataSource.rows("data/{env}/customers.json", "caseName", "customerId", "expectedStatus")</code><br><br><code>// data/uat/customers.json</code><br><code>[</code><br><code>&nbsp;&nbsp;{ "caseName": "active-customer",&nbsp;&nbsp;"customerId": "9900083901", "expectedStatus": "ACTIVE"&nbsp;&nbsp;},</code><br><code>&nbsp;&nbsp;{ "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }</code><br><code>]</code></td>
+    <td><code>.from()</code></td>
+    <td><code>ExtractTestData</code> — Extracts test data from a JSON array of flat-keyed objects (top-level keys are the fields a <code>DataRow</code> exposes; values may be any JSON, incl. nested objects/arrays) on the test classpath into a TestNG <code>@DataProvider</code> table — one <code>DataRow</code> per dataset object. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, non-object rows, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test). Never static-import <code>from</code>.</td>
+    <td><code>String</code> classpath resource</td>
+    <td><code>ExtractTestData.from("data/{env}/customers.json")</code><br><br><code>// data/uat/customers.json</code><br><code>[</code><br><code>&nbsp;&nbsp;{ "caseName": "active-customer",&nbsp;&nbsp;"customerId": "9900083901", "expectedStatus": "ACTIVE"&nbsp;&nbsp;},</code><br><code>&nbsp;&nbsp;{ "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }</code><br><code>]</code></td>
+  </tr>
+  <tr>
+    <td><code>.getString()</code> / <code>.getInt()</code> / <code>.getLong()</code> / <code>.getDecimal()</code> / <code>.getBoolean()</code> / <code>.getMap()</code> / <code>.getList()</code> / <code>.get()</code></td>
+    <td><code>DataRow</code> — Typed extraction of one dataset field at the use site. Missing key → <code>IllegalStateException</code> naming resource + row + field. Explicit JSON <code>null</code> → <code>null</code> from every getter (distinguishable from missing key). Wrong type → <code>IllegalStateException</code> naming expected and actual JSON type. <code>getDecimal</code> accepts <code>BigDecimal</code> and integers (widening), never <code>double</code>. <code>get()</code> is the raw escape hatch.</td>
+    <td><code>String</code> field name</td>
+    <td><code>row.getString("customerId")</code><br><code>row.getDecimal("expectedLimit")</code></td>
+  </tr>
+  <tr>
+    <td><code>.caseName()</code> / <code>.toString()</code></td>
+    <td><code>DataRow</code> — <code>caseName()</code> returns the row's <code>caseName</code> string, or <code>null</code> when the key is absent. <code>toString()</code> renders the row as compact JSON — this is the per-invocation label in the Allure report.</td>
+    <td>—</td>
+    <td><code>row.caseName()</code></td>
   </tr>
   </tbody>
   </table>
@@ -521,12 +533,12 @@ ApiResponseAssert.assertThat(response)
 //     "caseName":        "premium-active",
 //     "customerId":      "9900083901",
 //     "expectedStatus":  "ACTIVE",
-//     "expectedLimit":   100.00,                                // decimal → BigDecimal, scale preserved
-//     "expectedScore":   42,                                    // integer → Integer
-//     "expectedVip":     true,                                  // boolean → Boolean
-//     "expectedAddress": { "city": "Amman", "zip": "11183" },   // object → Map (deep-unmodifiable)
-//     "expectedTags":    [ "premium", "sms" ],                  // array  → List (deep-unmodifiable)
-//     "previousId":      null                                   // explicit null → null
+//     "expectedLimit":   100.00,                                // decimal → row.getDecimal(...), scale preserved
+//     "expectedScore":   42,                                    // integer → row.getInt(...)
+//     "expectedVip":     true,                                  // boolean → row.getBoolean(...)
+//     "expectedAddress": { "city": "Amman", "zip": "11183" },   // object → row.getMap(...) (deep-unmodifiable)
+//     "expectedTags":    [ "premium", "sms" ],                  // array  → row.getList(...) (deep-unmodifiable)
+//     "previousId":      null                                   // explicit null → null from every getter
 //   },
 //   {
 //     "caseName":        "standard-blocked",
@@ -537,61 +549,59 @@ ApiResponseAssert.assertThat(response)
 //     "expectedVip":     false,
 //     "expectedAddress": { "city": "Irbid", "zip": "21110" },
 //     "expectedTags":    [ "sms" ],
-//     "previousId":      "9900083800"                           // same column, non-null here
+//     "previousId":      "9900083800"                           // same field, non-null here
 //   }
 // ]</span>
 
 @DataProvider(name = "customers")
 public Object[][] customers() {
-    return JsonDataSource.rows("data/{env}/customers.json",
-            "caseName", "customerId", "expectedStatus", "expectedLimit",
-            "expectedScore", "expectedVip", "expectedAddress", "expectedTags", "previousId");
+    return ExtractTestData.from("data/{env}/customers.json");
 }
 
 @Test(dataProvider = "customers")
-public void customerMatchesDataset(String caseName, String customerId, String expectedStatus,
-        BigDecimal expectedLimit, Integer expectedScore, Boolean expectedVip,
-        Map&lt;String, Object&gt; expectedAddress, List&lt;Object&gt; expectedTags, Object previousId) {
-    var response = call("get-customer", String.class).pathParam("customerId", customerId).send();
+public void customerMatchesDataset(DataRow row) {
+    var response = call("get-customer", String.class)
+            .pathParam("customerId", row.getString("customerId")).send();
 
     ApiResponseAssert.assertThat(response)
             .hasStatus(200)
             .body(b -&gt; b
-                    .field("status",       f -&gt; f.hasValue(expectedStatus))              <span class="tok-cmt">// string</span>
-                    .field("limit",        f -&gt; f.hasValue(expectedLimit))               <span class="tok-cmt">// BigDecimal — scale-insensitive: 100.00 matches 100.0</span>
-                    .field("score",        f -&gt; f.hasValue(expectedScore))               <span class="tok-cmt">// integer</span>
-                    .field("vip",          f -&gt; f.hasValue(expectedVip))                 <span class="tok-cmt">// boolean</span>
-                    .field("address.city", f -&gt; f.hasValue(expectedAddress.get("city"))) <span class="tok-cmt">// object column → dot-path into response</span>
-                    .field("tags.0",       f -&gt; f.hasValue(expectedTags.get(0))));       <span class="tok-cmt">// array column → indexed path</span>
-    <span class="tok-cmt">// previousId (null) is request-side material: .bodyField("previousId", previousId) — nulls are skipped, field omitted</span>
+                    .field("status",       f -&gt; f.hasValue(row.getString("expectedStatus")))              <span class="tok-cmt">// string</span>
+                    .field("limit",        f -&gt; f.hasValue(row.getDecimal("expectedLimit")))              <span class="tok-cmt">// BigDecimal — scale-insensitive: 100.00 matches 100.0</span>
+                    .field("score",        f -&gt; f.hasValue(row.getInt("expectedScore")))                  <span class="tok-cmt">// integer</span>
+                    .field("vip",          f -&gt; f.hasValue(row.getBoolean("expectedVip")))                <span class="tok-cmt">// boolean</span>
+                    .field("address.city", f -&gt; f.hasValue(row.getMap("expectedAddress").get("city")))    <span class="tok-cmt">// object field → dot-path into response</span>
+                    .field("tags.0",       f -&gt; f.hasValue(row.getList("expectedTags").get(0))));         <span class="tok-cmt">// array field → indexed path</span>
+    <span class="tok-cmt">// previousId (explicit null in some rows) is request-side material:
+    // .bodyField("previousId", row.get("previousId")) — null is written as JSON null, not omitted</span>
 }</code></pre>
 
-  <p>JSON→Java type contract — test method parameters must declare the matching types:</p>
+  <p>JSON→Java type contract — values are extracted through the <code>DataRow</code> accessors:</p>
   <div class="table-wrap">
   <table>
   <thead>
   <tr>
     <th>JSON value</th>
-    <th>Java type in the row</th>
+    <th><code>DataRow</code> accessor</th>
   </tr>
   </thead>
   <tbody>
-  <tr><td>string</td><td><code>String</code></td></tr>
-  <tr><td>integer</td><td><code>Integer</code> / <code>Long</code></td></tr>
-  <tr><td>decimal</td><td><code>BigDecimal</code></td></tr>
-  <tr><td>boolean</td><td><code>Boolean</code></td></tr>
-  <tr><td>object</td><td><code>Map&lt;String,Object&gt;</code> (deep-unmodifiable)</td></tr>
-  <tr><td>array</td><td><code>List&lt;Object&gt;</code> (deep-unmodifiable)</td></tr>
-  <tr><td>explicit null</td><td><code>null</code></td></tr>
+  <tr><td>string</td><td><code>getString(field)</code></td></tr>
+  <tr><td>integer</td><td><code>getInt(field)</code> / <code>getLong(field)</code> — also accepted by <code>getDecimal</code> (widening)</td></tr>
+  <tr><td>decimal</td><td><code>getDecimal(field)</code> — <code>BigDecimal</code>, exact written scale</td></tr>
+  <tr><td>boolean</td><td><code>getBoolean(field)</code></td></tr>
+  <tr><td>object</td><td><code>getMap(field)</code> (deep-unmodifiable)</td></tr>
+  <tr><td>array</td><td><code>getList(field)</code> (deep-unmodifiable)</td></tr>
+  <tr><td>explicit null</td><td><code>null</code> from every getter (<code>get(field)</code> is the raw escape hatch)</td></tr>
   </tbody>
   </table>
   </div>
 
   <ul>
-    <li><strong>Always quote string values</strong> in dataset JSON — an unquoted <code>9900083901</code> binds as <code>Long</code>, and TestNG fails with a <code>MethodMatcherException</code> naming neither the file nor the row.</li>
-    <li><strong>Decimal columns are declared <code>BigDecimal</code> in the test signature, never <code>double</code>/<code>float</code></strong> — TestNG does no <code>BigDecimal</code>→<code>double</code> conversion. Assert them response-side via <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
-    <li>Optional <code>caseName</code> column: when requested, every row's value must be a non-blank, dataset-unique string — declared first in the test signature it becomes the per-invocation anchor in the Allure report.</li>
-    <li>Nested structures are deep-unmodifiable (TestNG retry re-uses the same row array); explicit <code>null</code>s are preserved and feed <code>.bodyField(k, v)</code> directly.</li>
+    <li><strong>Always quote string values</strong> in dataset JSON — an unquoted <code>9900083901</code> parses as a number, and <code>row.getString("customerId")</code> fails at first use with an <code>IllegalStateException</code> naming the dataset, row, and field.</li>
+    <li><strong>Decimals are extracted via <code>row.getDecimal(...)</code>, never <code>double</code>/<code>float</code></strong> — the loader parses decimals as <code>BigDecimal</code> with the exact written scale (<code>100.00</code> never becomes <code>100.0</code>). Assert them response-side via <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
+    <li>Optional <code>caseName</code> key: when present in a row, its value must be a non-blank, dataset-unique string — it anchors the per-invocation entry in the Allure report.</li>
+    <li>Nested structures are deep-unmodifiable (TestNG retry re-uses the same row); explicit <code>null</code>s are preserved — passed to <code>.bodyField(k, v)</code> they are written as JSON <code>null</code>, passed to <code>.query()</code> / <code>.header()</code> / <code>.pathParam()</code> as the literal string <code>"null"</code>. To omit a parameter, don't call the setter.</li>
   </ul>
 
   <!-- ════════════ Splunk DSL ════════════ -->

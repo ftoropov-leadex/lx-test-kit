@@ -419,7 +419,7 @@ git init</code></pre>
 
   <p>gradle.properties:</p>
 
-  <pre data-lang="properties"><code><span class="tok-prop">lxtestkit.version</span><span class="tok-punc">=</span><span class="tok-num">1.0.7</span></code></pre>
+  <pre data-lang="properties"><code><span class="tok-prop">lxtestkit.version</span><span class="tok-punc">=</span><span class="tok-num">1.x.x</span></code></pre>
 
   <p>Every suite pulls <code>framework-bundle:${lxtestkit.version}</code> via
   test-suites/build.gradle.kts. Bump this one line when a new framework
@@ -449,7 +449,10 @@ git init</code></pre>
     <li>
       <p><strong>Endpoint registry</strong> — test-suites/resources/domains.properties:</p>
       <pre data-lang="properties"><code><span class="tok-prop">api.endpoints.get-exampleByDate.method</span><span class="tok-punc">=</span><span class="tok-val">GET</span>
-<span class="tok-prop">api.endpoints.get-exampleByDate.reUrl</span><span class="tok-punc">=</span><span class="tok-str">/api/customer/search</span></code></pre>
+<span class="tok-prop">api.endpoints.get-exampleByDate.relUrl</span><span class="tok-punc">=</span><span class="tok-str">/api/customer/search</span></code></pre>
+      <p>Keys resolve against the suite class's own <code>&lt;domain&gt;.endpoints.*</code> first, then the reserved
+      <code>shared.endpoints.*</code> namespace (1.0.9) — entries there are visible to every domain, so cross-domain
+      utility endpoints (e.g. precondition calls) are registered once. On a key collision the domain entry wins.</p>
     </li>
     <li>
       <p><strong>TestNG suite XML</strong> — <code>src/test/resources/testng-&lt;suite-name&gt;.xml</code>. Listeners are declared on the
@@ -588,6 +591,15 @@ public void customerHasExpectedStatus(DataRow row) {
       <code>.query()/.header()/.pathParam()</code> send the literal string <code>"null"</code>.
       To omit a parameter, don't call the setter.</li>
   </ul>
+
+  <p><strong>Fake data (1.0.9).</strong> Random test values come from the framework's <code>Fake</code>
+    facade — call it directly in a test class (<code>Fake.decimal(1_000_000, 9_999_999, 2)</code>,
+    <code>Fake.faker().name().fullName()</code>), or embed DataFaker <code>#{...}</code> placeholders in
+    dataset JSON (e.g. <code>"contactPhone": "#{numerify '+7##########'}"</code>), resolved once at load
+    by <code>ExtractTestData.from()</code>. The seed is random per run (logged as
+    <code>faker seed=&lt;value&gt;</code>) and pinned via <code>FRAMEWORK_FAKER_SEED</code> to reproduce
+    a run. Full contract: <a href="lx-test-kit_DSL_Glossary_final.html#fake-data-generation">DSL glossary —
+    Fake data generation</a>.</p>
 
   <!-- ════════════ 6. Set the runtime env vars ════════════ -->
   <h2><span class="step-num">6</span> Set the runtime env vars</h2>

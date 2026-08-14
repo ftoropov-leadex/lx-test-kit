@@ -449,7 +449,10 @@ git init</code></pre>
     <li>
       <p><strong>Endpoint registry</strong> — test-suites/resources/domains.properties:</p>
       <pre data-lang="properties"><code><span class="tok-prop">api.endpoints.get-exampleByDate.method</span><span class="tok-punc">=</span><span class="tok-val">GET</span>
-<span class="tok-prop">api.endpoints.get-exampleByDate.reUrl</span><span class="tok-punc">=</span><span class="tok-str">/api/customer/search</span></code></pre>
+<span class="tok-prop">api.endpoints.get-exampleByDate.relUrl</span><span class="tok-punc">=</span><span class="tok-str">/api/customer/search</span></code></pre>
+      <p>Keys resolve against the suite class's own <code>&lt;domain&gt;.endpoints.*</code> first, then the reserved
+      <code>shared.endpoints.*</code> namespace (1.0.9) — entries there are visible to every domain, so cross-domain
+      utility endpoints (e.g. precondition calls) are registered once. On a key collision the domain entry wins.</p>
     </li>
     <li>
       <p><strong>TestNG suite XML</strong> — <code>src/test/resources/testng-&lt;suite-name&gt;.xml</code>. Listeners are declared on the

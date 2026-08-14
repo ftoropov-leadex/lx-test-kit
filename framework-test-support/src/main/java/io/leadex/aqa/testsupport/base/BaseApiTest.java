@@ -43,9 +43,13 @@ public abstract class BaseApiTest {
     public void initHttpClient() {
         FrameworkRuntimeConfig config = ConfigResolver.resolveFromSystem();
 
-        Properties domainProps = loadDomainProperties(domain());
+        Properties all = loadAllProperties();
+        // Endpoint resolution: shared.endpoints.* is visible to every domain; the domain's
+        // own entries win on a key collision (a domain may locally override a shared endpoint).
+        Properties merged = extractPrefix(all, "shared", false);
+        merged.putAll(extractPrefix(all, domain(), true));
         this.apiName   = domain();
-        this.endpoints = parseEndpoints(domainProps);
+        this.endpoints = parseEndpoints(merged);
         this.baseUrl   = config.baseUrl();
 
         RestAssuredConfig restAssuredConfig = RestAssuredConfig.config().httpClient(
@@ -80,8 +84,8 @@ public abstract class BaseApiTest {
         EndpointDefinition def = endpoints.get(endpointKey);
         if (def == null) {
             throw new IllegalStateException(
-                "Unknown endpoint key '" + endpointKey + "' in domain '" + domain() + "'. " +
-                "Known keys: " + new TreeSet<>(endpoints.keySet()));
+                "Unknown endpoint key '" + endpointKey + "' in domain '" + domain() + "' " +
+                "or the 'shared' namespace. Known keys: " + new TreeSet<>(endpoints.keySet()));
         }
         return new ApiRequestBuilder<>(httpClient(), baseUrl, def, responseType);
     }
@@ -97,7 +101,7 @@ public abstract class BaseApiTest {
         return httpClient;
     }
 
-    private static Properties loadDomainProperties(String domainName) {
+    private static Properties loadAllProperties() {
         Properties all = new Properties();
         Path domainsPath = Path.of(EnvResolver.required("FRAMEWORK_DOMAINS_PATH"));
         try (InputStream in = Files.newInputStream(domainsPath)) {
@@ -105,19 +109,24 @@ public abstract class BaseApiTest {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load domains.properties from: " + domainsPath, e);
         }
+        return all;
+    }
 
-        String prefix = domainName + ".";
-        Properties domain = new Properties();
+    /** Extracts the "{name}." sub-tree into a fresh Properties. A required namespace must
+     *  contribute at least one property; the optional 'shared' namespace may be absent. */
+    private static Properties extractPrefix(Properties all, String name, boolean required) {
+        String prefix = name + ".";
+        Properties out = new Properties();
         for (String key : all.stringPropertyNames()) {
             if (key.startsWith(prefix)) {
-                domain.setProperty(key.substring(prefix.length()), all.getProperty(key));
+                out.setProperty(key.substring(prefix.length()), all.getProperty(key));
             }
         }
-        if (domain.isEmpty()) {
+        if (required && out.isEmpty()) {
             throw new IllegalStateException(
-                "No properties found for domain '" + domainName + "' in domains.properties");
+                "No properties found for domain '" + name + "' in domains.properties");
         }
-        return domain;
+        return out;
     }
 
     private static Map<String, EndpointDefinition> parseEndpoints(Properties p) {

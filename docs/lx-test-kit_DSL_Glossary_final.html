@@ -338,7 +338,7 @@
   <tbody>
   <tr>
     <td><code>.call()</code></td>
-    <td><code>BaseApiTest</code> — Entry point. Resolves the endpoint key against <code>domains.properties</code> (method + relUrl) and returns an <code>ApiRequestBuilder</code> for it.</td>
+    <td><code>BaseApiTest</code> — Entry point. Resolves the endpoint key against <code>domains.properties</code> (method + relUrl) and returns an <code>ApiRequestBuilder</code> for it. Resolution order (1.0.9): the class's own <code>&lt;domain&gt;.endpoints.*</code> first, then the reserved <code>shared.endpoints.*</code> namespace — entries there are visible to every domain; on a key collision the domain entry wins. An unknown key fails fast listing all known keys (shared included).</td>
     <td><code>String</code> endpoint key + <code>Class&lt;T&gt;</code> response type</td>
     <td><code>call("get-customer", String.class)</code></td>
   </tr>

@@ -85,13 +85,28 @@ public final class ExtractTestData {
      * test with the same {@code Object[]}, so a mutating test would otherwise leak the
      * mutation into the retry attempt.
      *
+     * <p>Faker placeholders: any <b>string</b> value containing a native DataFaker
+     * {@code #{...}} expression (e.g. {@code "#{numerify '+7##########'}"}) — at any
+     * nesting depth — is resolved once here, at load time, via {@link Fake#expression}.
+     * Placeholders always resolve to strings; a typed read is one line test-side
+     * ({@code new BigDecimal(row.getString("amount"))}). Non-string values and explicit
+     * JSON {@code null} pass through untouched. Resolution happens before
+     * {@code caseName} validation, so a {@code caseName} containing an expression is
+     * validated in resolved form (uniqueness included). Resolve-once-at-load means
+     * every retry attempt and every report entry sees identical values; a run is
+     * reproduced by re-running with {@code FRAMEWORK_FAKER_SEED} set to the seed logged
+     * at init (see {@link Fake}). An expression DataFaker rejects fails the load with
+     * an {@link IllegalStateException} naming the dataset, row, and field — loud at
+     * provider time, before any HTTP call.
+     *
      * @param classpathResource dataset path on the test classpath; may contain the
      *                          {@code {env}} token (resolved from {@code FRAMEWORK_ENV})
      * @return one single-element {@code Object[]} (a {@link DataRow}) per dataset row,
      *         in file order; an empty dataset returns zero rows (TestNG skips the test)
      * @throws IllegalStateException if {@code FRAMEWORK_ENV} is required but unset,
-     *                               the resource is missing, the JSON is malformed, or a
-     *                               row violates the structural / {@code caseName} contract
+     *                               the resource is missing, the JSON is malformed, a
+     *                               placeholder expression is rejected, or a row
+     *                               violates the structural / {@code caseName} contract
      */
     public static Object[][] from(String classpathResource) {
         String path = classpathResource.contains("{env}")
@@ -119,7 +134,7 @@ public final class ExtractTestData {
                         + ": expected an object but was " + jsonTypeName(element));
             }
             @SuppressWarnings("unchecked")
-            Map<String, Object> rowValues = (Map<String, Object>) toDeepUnmodifiable(rowMap);
+            Map<String, Object> rowValues = (Map<String, Object>) toDeepUnmodifiable(path, i, null, rowMap);
             if (rowValues.containsKey("caseName")) {
                 validateCaseName(path, i, rowValues.get("caseName"), caseNameFirstRow);
             }
@@ -160,23 +175,36 @@ public final class ExtractTestData {
     }
 
     /**
-     * Copy-then-wrap in a single pass: each map/list is deep-copied recursively into a
+     * Copy-resolve-wrap in a single pass: each map/list is deep-copied recursively into a
      * fresh {@link LinkedHashMap}/{@link ArrayList} (key order preserved), then wrapped.
      * No reference to a mutable backing collection survives. {@code Map.copyOf} is
      * deliberately not used — it rejects null values, which datasets legitimately contain.
-     * Scalars ({@code String}, {@code Integer}/{@code Long}, {@code BigDecimal},
+     * String values containing {@code #{} are resolved as DataFaker expressions (once,
+     * here at load); other scalars ({@code Integer}/{@code Long}, {@code BigDecimal},
      * {@code Boolean}, {@code null}) are immutable and pass through unchanged.
+     *
+     * @param field the key the value sits under (for error messages); {@code null} only
+     *              for the top-level row object, which is a map and never resolved itself
      */
-    private static Object toDeepUnmodifiable(Object value) {
+    private static Object toDeepUnmodifiable(String path, int rowIndex, String field, Object value) {
         if (value instanceof Map<?, ?> map) {
             Map<String, Object> copy = new LinkedHashMap<>();
-            map.forEach((k, v) -> copy.put((String) k, toDeepUnmodifiable(v)));
+            map.forEach((k, v) -> copy.put((String) k, toDeepUnmodifiable(path, rowIndex, (String) k, v)));
             return Collections.unmodifiableMap(copy);
         }
         if (value instanceof List<?> list) {
             List<Object> copy = new ArrayList<>(list.size());
-            list.forEach(element -> copy.add(toDeepUnmodifiable(element)));
+            list.forEach(element -> copy.add(toDeepUnmodifiable(path, rowIndex, field, element)));
             return Collections.unmodifiableList(copy);
+        }
+        if (value instanceof String string && string.contains("#{")) {
+            try {
+                return Fake.expression(string);
+            } catch (RuntimeException e) {
+                throw new IllegalStateException("Dataset [" + path + "], row " + rowIndex
+                        + ", field '" + field + "': DataFaker rejected expression '" + string
+                        + "': " + e.getMessage(), e);
+            }
         }
         return value;
     }

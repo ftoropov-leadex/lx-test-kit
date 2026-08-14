@@ -308,9 +308,78 @@
       Two assertion DSL layers, both backed by AssertJ <code>AbstractAssert</code> — every public method
       is auto-stepped by <code>AllureAspectJ</code> via LTW. Splunk await methods
       (<code>SplunkSupport</code> / <code>SplunkClient</code>) are included because they form the
-      pre-assertion pipeline.
+      pre-assertion pipeline; request building (<code>call()</code> → <code>ApiRequestBuilder</code>)
+      and fake-data generation (<code>Fake</code>) because they form the request side of the same flat
+      test pattern.
     </p>
   </div>
+
+  <!-- ════════════ Request building ════════════ -->
+  <h2 id="request-building" class="heading-wrapper"><a href="#request-building" class="heading-anchor">#</a>Request building</h2>
+  <p class="package">io.leadex.aqa.testsupport.base &nbsp;|&nbsp; io.leadex.aqa.testsupport.client</p>
+
+  <p><strong>Conduit principle (1.0.9):</strong> the framework is a faithful conduit to REST Assured —
+    anything the library can transmit, the DSL transmits verbatim, on every HTTP method. The framework
+    adds zero value/policy guards, and nothing accepted by the DSL is silently dropped.
+    <code>.query()</code>, <code>.header()</code>, and <code>.bodyField()</code> are transmittable on
+    GET, POST, PUT, PATCH, and DELETE alike — a query string on a POST or a body on a DELETE goes on
+    the wire exactly as written.</p>
+
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.call()</code></td>
+    <td><code>BaseApiTest</code> — Entry point. Resolves the endpoint key against <code>domains.properties</code> (method + relUrl) and returns an <code>ApiRequestBuilder</code> for it.</td>
+    <td><code>String</code> endpoint key + <code>Class&lt;T&gt;</code> response type</td>
+    <td><code>call("get-customer", String.class)</code></td>
+  </tr>
+  <tr>
+    <td><code>.query()</code></td>
+    <td><code>ApiRequestBuilder</code> — Adds a query parameter, on any HTTP method. Re-calling with the same key replaces the value.</td>
+    <td><code>String</code> name + <code>Object</code> value</td>
+    <td><code>.query("customerId", row.getString("customerId"))</code></td>
+  </tr>
+  <tr>
+    <td><code>.pathParam()</code></td>
+    <td><code>ApiRequestBuilder</code> — Substitutes a <code>{key}</code> placeholder in the endpoint's relUrl.</td>
+    <td><code>String</code> name + <code>Object</code> value</td>
+    <td><code>.pathParam("customerId", "9900083901")</code></td>
+  </tr>
+  <tr>
+    <td><code>.header()</code></td>
+    <td><code>ApiRequestBuilder</code> — Adds a per-call header, on any HTTP method. On a name collision with a base-spec header the per-call value <strong>overwrites</strong> (no comma-merge). Exception: <code>X-Correlation-Id</code> is framework-owned infrastructure — <code>CorrelationIdFilter</code> sets it last, it is always present, and a per-call value cannot override it.</td>
+    <td><code>String</code> name + <code>String</code> value</td>
+    <td><code>.header("X-Contact-Phone", row.getString("contactPhone"))</code></td>
+  </tr>
+  <tr>
+    <td><code>.bodyField()</code></td>
+    <td><code>ApiRequestBuilder</code> — Puts one field into the JSON request body, on any HTTP method (GET/DELETE included). The only body composition method — there is no <code>.body(dto)</code>.</td>
+    <td><code>String</code> field + <code>Object</code> value</td>
+    <td><code>.bodyField("amount", new BigDecimal("100.00"))</code></td>
+  </tr>
+  <tr>
+    <td><code>.send()</code></td>
+    <td><code>ApiRequestBuilder</code> — Executes the request and returns the response.</td>
+    <td>—</td>
+    <td><code>.send()</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <p>Explicit-null rule (1.0.8, unchanged): a <code>null</code> value passed to <code>.query()</code> /
+    <code>.header()</code> / <code>.pathParam()</code> is sent as the literal string <code>"null"</code>;
+    <code>.bodyField(k, null)</code> writes JSON <code>null</code>; an empty value is sent empty.
+    The only way to omit a parameter is to not call the setter.</p>
 
   <!-- ════════════ API Response DSL ════════════ -->
   <h2 id="api-response-dsl" class="heading-wrapper"><a href="#api-response-dsl" class="heading-anchor">#</a>API Response DSL</h2>
@@ -505,7 +574,7 @@ ApiResponseAssert.assertThat(response)
   <tbody>
   <tr>
     <td><code>.from()</code></td>
-    <td><code>ExtractTestData</code> — Extracts test data from a JSON array of flat-keyed objects (top-level keys are the fields a <code>DataRow</code> exposes; values may be any JSON, incl. nested objects/arrays) on the test classpath into a TestNG <code>@DataProvider</code> table — one <code>DataRow</code> per dataset object. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, non-object rows, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test). Never static-import <code>from</code>.</td>
+    <td><code>ExtractTestData</code> — Extracts test data from a JSON array of flat-keyed objects (top-level keys are the fields a <code>DataRow</code> exposes; values may be any JSON, incl. nested objects/arrays) on the test classpath into a TestNG <code>@DataProvider</code> table — one <code>DataRow</code> per dataset object. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, non-object rows, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test). String values containing DataFaker <code>#{...}</code> expressions are resolved once at load (see <a href="#fake-data-generation">Fake data generation</a>). Never static-import <code>from</code>.</td>
     <td><code>String</code> classpath resource</td>
     <td><code>ExtractTestData.from("data/{env}/customers.json")</code><br><br><code>// data/uat/customers.json</code><br><code>[</code><br><code>&nbsp;&nbsp;{ "caseName": "active-customer",&nbsp;&nbsp;"customerId": "9900083901", "expectedStatus": "ACTIVE"&nbsp;&nbsp;},</code><br><code>&nbsp;&nbsp;{ "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }</code><br><code>]</code></td>
   </tr>
@@ -602,7 +671,97 @@ public void customerMatchesDataset(DataRow row) {
     <li><strong>Decimals are extracted via <code>row.getDecimal(...)</code>, never <code>double</code>/<code>float</code></strong> — the loader parses decimals as <code>BigDecimal</code> with the exact written scale (<code>100.00</code> never becomes <code>100.0</code>). Assert them response-side via <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
     <li>Optional <code>caseName</code> key: when present in a row, its value must be a non-blank, dataset-unique string — it anchors the per-invocation entry in the Allure report.</li>
     <li>Nested structures are deep-unmodifiable (TestNG retry re-uses the same row); explicit <code>null</code>s are preserved — passed to <code>.bodyField(k, v)</code> they are written as JSON <code>null</code>, passed to <code>.query()</code> / <code>.header()</code> / <code>.pathParam()</code> as the literal string <code>"null"</code>. To omit a parameter, don't call the setter.</li>
+    <li>String values may carry DataFaker <code>#{...}</code> placeholders, resolved once at dataset load — see <a href="#fake-data-generation">Fake data generation</a> below.</li>
   </ul>
+
+  <!-- ════════════ Fake data generation ════════════ -->
+  <h2 id="fake-data-generation" class="heading-wrapper"><a href="#fake-data-generation" class="heading-anchor">#</a>Fake data generation</h2>
+  <p class="package">io.leadex.aqa.testsupport.testdata</p>
+
+  <p>Two consumption paths off <strong>one</strong> seeded <a href="https://www.datafaker.net/">DataFaker</a>
+    instance: direct calls in test classes, and <code>#{...}</code> placeholders inside JSON datasets.</p>
+
+  <div class="table-wrap">
+  <table>
+  <thead>
+  <tr>
+    <th>DSL artifact</th>
+    <th>Which Java-class calls</th>
+    <th>Data format to input</th>
+    <th>Example</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td><code>.numerify()</code> / <code>.letterify()</code> / <code>.regexify()</code> / <code>.bothify()</code></td>
+    <td><code>Fake</code> — Pattern-based string generation, direct delegates to DataFaker (<code>#</code> → random digit, <code>?</code> → random letter).</td>
+    <td><code>String</code> pattern</td>
+    <td><code>Fake.numerify("+7##########")</code></td>
+  </tr>
+  <tr>
+    <td><code>.expression()</code></td>
+    <td><code>Fake</code> — Evaluates DataFaker's native <code>#{...}</code> expression syntax. The engine behind dataset placeholders; also usable test-side.</td>
+    <td><code>String</code> expression</td>
+    <td><code>Fake.expression("#{regexify '[A-Z]{2}[0-9]{4}'}")</code></td>
+  </tr>
+  <tr>
+    <td><code>.integer()</code></td>
+    <td><code>Fake</code> — Random int between <code>min</code> and <code>max</code>, both inclusive.</td>
+    <td><code>int</code> min + <code>int</code> max</td>
+    <td><code>Fake.integer(1, 100)</code></td>
+  </tr>
+  <tr>
+    <td><code>.decimal()</code></td>
+    <td><code>Fake</code> — Random <code>BigDecimal</code> with whole part in <code>[min, max]</code> (inclusive) and exactly <code>scale</code> fraction digits — the same exact-scale contract as dataset decimals.</td>
+    <td><code>long</code> min + <code>long</code> max + <code>int</code> scale</td>
+    <td><code>Fake.decimal(1_000_000, 9_999_999, 2)</code></td>
+  </tr>
+  <tr>
+    <td><code>.bool()</code></td>
+    <td><code>Fake</code> — Random boolean.</td>
+    <td>—</td>
+    <td><code>Fake.bool()</code></td>
+  </tr>
+  <tr>
+    <td><code>.faker()</code></td>
+    <td><code>Fake</code> — Escape hatch: the raw <code>net.datafaker.Faker</code> instance — full catalog (names, phones, addresses, …); catalog reference is DataFaker's own documentation.</td>
+    <td>—</td>
+    <td><code>Fake.faker().name().fullName()</code></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <p><strong>Seed and reproduction.</strong> The seed is drawn once per run (random) and logged via SLF4J
+    at init as <code>faker seed=&lt;value&gt;</code> — the reproduction handle for any faker-influenced
+    failure. Re-run with identical values by setting <code>FRAMEWORK_FAKER_SEED=&lt;value&gt;</code>;
+    a set-but-unparseable value fails fast naming the variable. Same seed → same sequence of values,
+    in call order.</p>
+
+  <p><strong>Dataset placeholders.</strong> Any string value in a JSON dataset containing DataFaker's
+    native <code>#{...}</code> syntax — at any nesting depth — is resolved <strong>once at dataset
+    load</strong> by <code>ExtractTestData.from()</code>, before <code>caseName</code> validation:</p>
+
+  <pre><code><span class="tok-cmt">// data/uat/customer-info-statuses.json
+// [
+//   { "caseName": "active-customer", "customerId": "9900083901",
+//     "contactPhone": "#{numerify '+7##########'}" }
+// ]</span>
+
+var response = call("get-customerInfo", String.class)
+        .query("customerId", row.getString("customerId"))
+        .header("X-Contact-Phone", row.getString("contactPhone"))   <span class="tok-cmt">// resolved at load</span>
+        .send();</code></pre>
+
+  <ul>
+    <li>Placeholders always resolve to JSON <strong>strings</strong> — a typed read is one line test-side: <code>new BigDecimal(row.getString("amount"))</code>.</li>
+    <li>Resolution happens once at load, never per getter call — retries re-invoke with the same <code>DataRow</code>, so every attempt (and the Allure invocation label) sees identical resolved values.</li>
+    <li>A malformed expression fails at provider time — <code>IllegalStateException</code> naming dataset path, row index, and field, before any HTTP call.</li>
+  </ul>
+
+  <p><strong>Identity boundary.</strong> Faker generates <em>content</em> data (names, phones, amounts,
+    negative-test garbage). It never replaces server-minted identifiers (<code>customerId</code>,
+    <code>accountId</code>) returned by precondition API calls.</p>
 
   <!-- ════════════ Splunk DSL ════════════ -->
   <h2 id="splunk-dsl" class="heading-wrapper"><a href="#splunk-dsl" class="heading-anchor">#</a>Splunk DSL</h2>
@@ -896,7 +1055,7 @@ public void shouldLogTracePoints() {
 }</code></pre>
 
   <div class="footer">
-    lx-test-kit · <code>lx-test-kit_DSL_Glossary</code> · API Response DSL &amp; Splunk DSL
+    lx-test-kit · <code>lx-test-kit_DSL_Glossary</code> · Request building &amp; API Response DSL &amp; Splunk DSL
   </div>
 
 </div>

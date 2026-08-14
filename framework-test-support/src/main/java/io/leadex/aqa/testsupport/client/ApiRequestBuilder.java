@@ -3,6 +3,7 @@ package io.leadex.aqa.testsupport.client;
 import io.leadex.aqa.config.EndpointDefinition;
 import io.leadex.aqa.config.UrlResolver;
 import io.leadex.aqa.http.HttpClient;
+import io.leadex.aqa.http.HttpRequest;
 import io.leadex.aqa.model.ApiResponse;
 
 import java.util.LinkedHashMap;
@@ -11,16 +12,18 @@ import java.util.Map;
 /**
  * Fluent builder for a single API request.
  *
+ * <p>Conduit principle — the framework is a faithful conduit to REST Assured: every
+ * setter value goes on the wire verbatim, for every HTTP method. {@link #query},
+ * {@link #header}, and {@link #bodyField} are transmittable on GET, POST, PUT, PATCH,
+ * and DELETE alike; nothing is silently dropped. The framework adds zero judgment on
+ * values — deliberately "invalid" input is the test's business, never the framework's.
+ *
  * <p>Explicit-null rule — no hidden transformations, what you pass is what goes on the
  * wire: {@code null} passed to {@link #query}, {@link #header}, or {@link #pathParam}
  * is sent as the literal string {@code "null"}; {@code null} passed to
  * {@link #bodyField} is written as JSON {@code null}. Empty string is sent empty.
  * The only way to omit a parameter is to not call the setter. This enables negative
  * testing — deliberately sending {@code "null"}, empty, or arbitrary values.
- *
- * <p>Headers guard: {@link #header} populates the map but {@link #send()} throws
- * {@link UnsupportedOperationException} if the map is non-empty — per-call header wiring
- * through {@link HttpClient} is deferred to the HttpRequest record follow-up.
  */
 public final class ApiRequestBuilder<T> {
 
@@ -48,10 +51,7 @@ public final class ApiRequestBuilder<T> {
         return this;
     }
 
-    /**
-     * Adds a request header. A {@code null} value is sent as the literal string {@code "null"}.
-     * Note: header wiring is not yet supported — {@link #send()} throws if the map is non-empty.
-     */
+    /** Adds a request header. A {@code null} value is sent as the literal string {@code "null"}. */
     public ApiRequestBuilder<T> header(String k, String v) {
         headers.put(k, v == null ? "null" : v);
         return this;
@@ -75,17 +75,9 @@ public final class ApiRequestBuilder<T> {
 
     /** Executes the request and returns the response. */
     public ApiResponse<T> send() {
-        if (!headers.isEmpty()) {
-            throw new UnsupportedOperationException(
-                "Per-call headers not yet supported. See follow-up: HttpRequest record refactor.");
-        }
         String resolvedUrl = UrlResolver.resolve(baseUrl, endpoint.relUrl(), pathParams);
-        return switch (endpoint.method()) {
-            case GET    -> client.get(resolvedUrl, query, responseType);
-            case POST   -> client.post(resolvedUrl, bodyFields, responseType);
-            case PUT    -> client.put(resolvedUrl, bodyFields, responseType);
-            case PATCH  -> client.patch(resolvedUrl, bodyFields, responseType);
-            case DELETE -> client.delete(resolvedUrl, responseType);
-        };
+        return client.send(
+            new HttpRequest(endpoint.method(), resolvedUrl, query, headers, bodyFields),
+            responseType);
     }
 }

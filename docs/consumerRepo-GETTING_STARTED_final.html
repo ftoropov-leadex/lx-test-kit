@@ -365,10 +365,6 @@
     </table>
   </div>
 
-  <p>Depending on the framework artifact location. e.g. in case with BaE project: the framework artifact is <strong>not</strong> on Maven Central. It resolves from
-  <code>https://maven.pkg.github.com/ftoropov-leadex/lx-test-kit</code>, which requires authentication even for
-  read — hence the PAT.</p>
-
   <!-- ════════════ 1. Get the repo ════════════ -->
   <h2><span class="step-num">1</span> Get the repo</h2>
 
@@ -604,8 +600,9 @@ public void customerHasExpectedStatus(DataRow row) {
   <!-- ════════════ 6. Set the runtime env vars ════════════ -->
   <h2><span class="step-num">6</span> Set the runtime env vars</h2>
 
-  <p>The framework reads these at startup via <code>ConfigResolver</code>. For the full variable table, see
-  README.md.</p>
+  <p>The framework reads these at startup via <code>ConfigResolver</code>. The blocks below are the required
+  minimum; <code>FRAMEWORK_READ_TIMEOUT</code> is optional. The full list of all available environment
+  variables (with defaults) lives in the framework repository's README.md.</p>
 
   <h3>For local runs</h3>
 
@@ -614,14 +611,16 @@ public void customerHasExpectedStatus(DataRow row) {
 <span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_BASE_URL</span><span class="tok-punc">=</span><span class="tok-str">https://&lt;sandbox-host&gt;</span>
 <span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_DOMAINS_PATH</span><span class="tok-punc">=</span><span class="tok-str">"$PWD/test-suites/resources/domains.properties"</span>
 <span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_CLIENT_NAME</span><span class="tok-punc">=</span><span class="tok-val">&lt;client&gt;</span>
-<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_CLIENT_SECRET</span><span class="tok-punc">=</span><span class="tok-val">&lt;secret&gt;</span></code></pre>
+<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_CLIENT_SECRET</span><span class="tok-punc">=</span><span class="tok-val">&lt;secret&gt;</span>
+<span class="tok-kw">export</span> <span class="tok-var">FRAMEWORK_READ_TIMEOUT</span><span class="tok-punc">=</span><span class="tok-val">15000</span>  <span class="tok-cmt"># optional — milliseconds, default shown; raise for slow endpoints</span></code></pre>
 
   <p><strong>Windows (cmd):</strong></p>
   <pre data-lang="cmd"><code><span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_ENV</span><span class="tok-punc">=</span><span class="tok-str">uat</span>
 <span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_BASE_URL</span><span class="tok-punc">=</span><span class="tok-str">https://&lt;sandbox-host&gt;</span>
 <span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_DOMAINS_PATH</span><span class="tok-punc">=</span><span class="tok-str">%CD%\test-suites\resources\domains.properties</span>
 <span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_CLIENT_NAME</span><span class="tok-punc">=</span><span class="tok-val">&lt;client&gt;</span>
-<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_CLIENT_SECRET</span><span class="tok-punc">=</span><span class="tok-val">&lt;secret&gt;</span></code></pre>
+<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_CLIENT_SECRET</span><span class="tok-punc">=</span><span class="tok-val">&lt;secret&gt;</span>
+<span class="tok-kw">set</span> <span class="tok-var">FRAMEWORK_READ_TIMEOUT</span><span class="tok-punc">=</span><span class="tok-val">15000</span>  <span class="tok-cmt">:: optional — milliseconds, default shown; raise for slow endpoints</span></code></pre>
 
   <h3>For CI (GitHub Actions)</h3>
 

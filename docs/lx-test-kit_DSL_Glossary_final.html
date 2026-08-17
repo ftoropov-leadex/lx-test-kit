@@ -174,6 +174,12 @@
     color: var(--text);
     display: block;
   }
+  /* codeblocks inside table cells wrap instead of stretching the table past the wrap's clip */
+  td pre {
+    margin: 8px 0 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
 
   /* ── tables ── */
   .table-wrap {
@@ -358,7 +364,7 @@
     <td><code>.header()</code></td>
     <td><code>ApiRequestBuilder</code> — Adds a per-call header, on any HTTP method. On a name collision with a base-spec header the per-call value <strong>overwrites</strong> (no comma-merge). Exception: <code>X-Correlation-Id</code> is framework-owned infrastructure — <code>CorrelationIdFilter</code> sets it last, it is always present, and a per-call value cannot override it.</td>
     <td><code>String</code> name + <code>String</code> value</td>
-    <td><code>.header("X-Contact-Phone", row.getString("contactPhone"))</code></td>
+    <td><code>.header("Content-Type", "application/json")</code></td>
   </tr>
   <tr>
     <td><code>.bodyField()</code></td>
@@ -401,7 +407,7 @@
     <td><code>.assertThat()</code></td>
     <td><code>ApiResponseAssert</code> — Static entry point for the API response assertion chain.</td>
     <td><code>ApiResponse&lt;T&gt;</code></td>
-    <td><code>ApiResponseAssert.assertThat(response)</code></td>
+    <td><code>ApiResponseAssert.</code><strong><code>.assertThat(response).</code></strong><code>...</code></td>
   </tr>
   <tr>
     <td><code>.hasStatus()</code></td>
@@ -463,15 +469,15 @@
   </tr>
   <tr>
     <td><code>.matchesSchema()</code></td>
-    <td><code>BodyAssert</code> — Validates the <strong>full original response JSON</strong> against a JSON Schema file on the classpath. Not available on <code>FieldAssert</code>.</td>
+    <td><code>BodyAssert</code> — Validates the <em>structure</em> of the <strong>full original response JSON</strong> against a JSON Schema file on the classpath: field names, types, required-ness — <strong>field values are not compared</strong>.</td>
     <td><code>String</code> — classpath-relative path</td>
-    <td><code>.body(b -&gt; b.matchesSchema("schemas/postman-echo-get.schema.json"))</code></td>
+    <td><code>.body(b -&gt; b.matchesSchema("schemas/postman-echo-get.schema.json"))</code><br>Typical use case: the response body must conform to the expected schema while its values vary run to run and need no validation. Not available on <code>FieldAssert</code>.</td>
   </tr>
   <tr>
     <td><code>.matchesSnapshot()</code></td>
-    <td><code>BodyAssert</code> — Validates the <strong>full original response JSON</strong> against a golden-file snapshot by name. Not available on <code>FieldAssert</code>.</td>
+    <td><code>BodyAssert</code> — Validates the <strong>full original response JSON</strong> against a golden-file snapshot by name: every field listed in the snapshot must match <strong>by exact value</strong> (extra response fields are ignored).</td>
     <td><code>String</code> — snapshot name</td>
-    <td><code>.body(b -&gt; b.matchesSnapshot("postman-echo-get"))</code></td>
+    <td><code>.body(b -&gt; b.matchesSnapshot("postman-echo-get"))</code><br>Practical only when the response is identical run to run without a single value difference — e.g. a fixed default error message; any run-varying value (server-minted ids, timestamps) makes a snapshot unusable. Not available on <code>FieldAssert</code>.</td>
   </tr>
   </tbody>
   </table>
@@ -576,13 +582,24 @@ ApiResponseAssert.assertThat(response)
     <td><code>.from()</code></td>
     <td><code>ExtractTestData</code> — Extracts test data from a JSON array of flat-keyed objects (top-level keys are the fields a <code>DataRow</code> exposes; values may be any JSON, incl. nested objects/arrays) on the test classpath into a TestNG <code>@DataProvider</code> table — one <code>DataRow</code> per dataset object. A <code>{env}</code> token in the path resolves from <code>FRAMEWORK_ENV</code> (fail-fast, no fallback). Fails loud on duplicate JSON keys, non-object rows, and duplicate/blank <code>caseName</code>. An empty dataset returns zero rows (TestNG skips the test). String values containing DataFaker <code>#{...}</code> expressions are resolved once at load (see <a href="#fake-data-generation">Fake data generation</a>). Never static-import <code>from</code>.</td>
     <td><code>String</code> classpath resource</td>
-    <td><code>ExtractTestData.from("data/{env}/customers.json")</code><br><br><code>// data/uat/customers.json</code><br><code>[</code><br><code>&nbsp;&nbsp;{ "caseName": "active-customer",&nbsp;&nbsp;"customerId": "9900083901", "expectedStatus": "ACTIVE"&nbsp;&nbsp;},</code><br><code>&nbsp;&nbsp;{ "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }</code><br><code>]</code></td>
+    <td><code>ExtractTestData.from("data/{env}/customers.json")</code>
+      <pre><code><span class="tok-cmt">// data/uat/customers.json</span>
+[
+  { "caseName": "active-customer",  "customerId": "9900083901", "expectedStatus": "ACTIVE"  },
+  { "caseName": "blocked-customer", "customerId": "9900083902", "expectedStatus": "BLOCKED" }
+]</code></pre></td>
   </tr>
   <tr>
-    <td><code>.getString()</code> / <code>.getInt()</code> / <code>.getLong()</code> / <code>.getDecimal()</code> / <code>.getBoolean()</code> / <code>.getMap()</code> / <code>.getList()</code> / <code>.get()</code></td>
-    <td><code>DataRow</code> — Typed extraction of one dataset field at the use site. Missing key → <code>IllegalStateException</code> naming resource + row + field. Explicit JSON <code>null</code> → <code>null</code> from every getter (distinguishable from missing key). Wrong type → <code>IllegalStateException</code> naming expected and actual JSON type. <code>getDecimal</code> accepts <code>BigDecimal</code> and integers (widening), never <code>double</code>. <code>get()</code> is the raw escape hatch.</td>
+    <td><code>.getString()</code><br><code>.getInt()</code><br><code>.getLong()</code><br><code>.getDecimal()</code><br><code>.getBoolean()</code><br><code>.getMap()</code><br><code>.getList()</code></td>
+    <td><code>DataRow</code> — Typed extraction of one dataset field at the use site. Missing key → <code>IllegalStateException</code> naming resource + row + field. Explicit JSON <code>null</code> → <code>null</code> from every getter (distinguishable from missing key). Wrong type → <code>IllegalStateException</code> naming expected and actual JSON type. <code>getDecimal</code> accepts <code>BigDecimal</code> and integers (widening), never <code>double</code>.</td>
     <td><code>String</code> field name</td>
     <td><code>row.getString("customerId")</code><br><code>row.getDecimal("expectedLimit")</code></td>
+  </tr>
+  <tr>
+    <td><code>.get()</code></td>
+    <td><code>DataRow</code> — Raw, untyped extraction of one dataset field: the value exactly as parsed (explicit JSON <code>null</code> → <code>null</code>). The escape hatch for cases the typed getters don't cover — forwarding an explicit <code>null</code> into the request (<code>.bodyField(k, null)</code> writes JSON <code>null</code>), or passing a nested object/array straight through without conversion.</td>
+    <td><code>String</code> field name</td>
+    <td><code>.bodyField("previousId", row.get("previousId"))</code><br>Prefer the typed getters whenever the type is known.</td>
   </tr>
   <tr>
     <td><code>.caseName()</code> / <code>.toString()</code></td>
@@ -630,7 +647,11 @@ public Object[][] customers() {
 @Test(dataProvider = "customers")
 public void customerMatchesDataset(DataRow row) {
     var response = call("get-customer", String.class)
-            .pathParam("customerId", row.getString("customerId")).send();
+            .pathParam("customerId", row.getString("customerId"))
+            <span class="tok-cmt">// explicit null in some rows — row.get(...) returns null, and .bodyField writes it as
+            // JSON null, so the field goes on the wire as "previousId": null — sent, not omitted</span>
+            .bodyField("previousId", row.get("previousId"))
+            .send();
 
     ApiResponseAssert.assertThat(response)
             .hasStatus(200)
@@ -641,8 +662,6 @@ public void customerMatchesDataset(DataRow row) {
                     .field("vip",          f -&gt; f.hasValue(row.getBoolean("expectedVip")))                <span class="tok-cmt">// boolean</span>
                     .field("address.city", f -&gt; f.hasValue(row.getMap("expectedAddress").get("city")))    <span class="tok-cmt">// object field → dot-path into response</span>
                     .field("tags.0",       f -&gt; f.hasValue(row.getList("expectedTags").get(0))));         <span class="tok-cmt">// array field → indexed path</span>
-    <span class="tok-cmt">// previousId (explicit null in some rows) is request-side material:
-    // .bodyField("previousId", row.get("previousId")) — null is written as JSON null, not omitted</span>
 }</code></pre>
 
   <p>JSON→Java type contract — values are extracted through the <code>DataRow</code> accessors:</p>
@@ -693,10 +712,10 @@ public void customerMatchesDataset(DataRow row) {
   </thead>
   <tbody>
   <tr>
-    <td><code>.numerify()</code> / <code>.letterify()</code> / <code>.regexify()</code> / <code>.bothify()</code></td>
+    <td><code>.numerify()</code><br><code>.letterify()</code><br><code>.regexify()</code><br><code>.bothify()</code></td>
     <td><code>Fake</code> — Pattern-based string generation, direct delegates to DataFaker (<code>#</code> → random digit, <code>?</code> → random letter).</td>
     <td><code>String</code> pattern</td>
-    <td><code>Fake.numerify("+7##########")</code></td>
+    <td><code>Fake.numerify("+7##########")</code><br><code>Fake.letterify("??-TEST")</code><br><code>Fake.regexify("[A-Z]{2}[0-9]{4}")</code><br><code>Fake.bothify("??##")</code></td>
   </tr>
   <tr>
     <td><code>.expression()</code></td>
@@ -745,12 +764,12 @@ public void customerMatchesDataset(DataRow row) {
   <pre><code><span class="tok-cmt">// data/uat/customer-info-statuses.json
 // [
 //   { "caseName": "active-customer", "customerId": "9900083901",
-//     "contactPhone": "#{numerify '+7##########'}" }
+//     "userAgent": "#{options.option 'Agent-a','Agent-b'}" }
 // ]</span>
 
 var response = call("get-customerInfo", String.class)
         .query("customerId", row.getString("customerId"))
-        .header("X-Contact-Phone", row.getString("contactPhone"))   <span class="tok-cmt">// resolved at load</span>
+        .header("User-Agent", row.getString("userAgent"))   <span class="tok-cmt">// resolved at load</span>
         .send();</code></pre>
 
   <ul>

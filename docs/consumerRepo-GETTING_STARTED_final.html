@@ -439,7 +439,7 @@ git init</code></pre>
   <!-- ════════════ 5. Understand what one suite needs ════════════ -->
   <h2><span class="step-num">5</span> Understand what one suite needs</h2>
 
-  <p>A suite (<code>test-suites/&lt;suite-name-example&gt;/</code>) is wired from four pieces:</p>
+  <p>A suite (<code>test-suites/&lt;suite-name-example&gt;/</code>) is wired from five pieces:</p>
 
   <ol>
     <li>
@@ -462,6 +462,13 @@ git init</code></pre>
       <p><strong>Schema + snapshot</strong> — <code>src/test/resources/schemas/*.schema.json</code> and <code>snapshots/*.json</code>, used by
       <code>matchesSchema(...)</code> / <code>matchesSnapshot(...)</code>.</p>
     </li>
+    <li>
+      <p><strong>Shared suite-support (inherited)</strong> — <code>test-suites/src/main/java/.../support/</code>: the umbrella
+      project <code>:test-suites</code> carries its own main source set, and every suite receives it through an inherited
+      <code>testImplementation(project(":test-suites"))</code>. Nothing to declare per suite. This is where cross-suite
+      test-support mechanisms live — <code>ChainContext</code> (the <code>ITestContext</code> handle for chained classes)
+      and <code>PrecondUid</code> (unique client-supplied inputs), both used by precondition-based tests below.</p>
+    </li>
   </ol>
 
   <p>Suite registration: settings.gradle.kts auto-registers every suite dir that
@@ -470,6 +477,11 @@ git init</code></pre>
   <p>A per-suite <code>build.gradle.kts</code> only needs <code>plugins { id("java") }</code> — the framework dependency
   and the TestNG suite XML path (<code>testng-&lt;suite-name&gt;.xml</code>) are applied from the parent
   <code>test-suites/build.gradle.kts</code> via convention. See the reference layout for the exact one-liner.</p>
+
+  <p>Where shared test-support code goes: the umbrella's <code>src/main/java</code>, never a per-suite
+  <code>support/</code> package and never the framework. Keep the bar high — a class earns a place there only when it is
+  a real mechanism (unique-input generation, the TestNG context handle). A validation snippet duplicated across two test
+  classes does not; inline it per class.</p>
 
   <!-- ════════════ Import the framework in test classes ════════════ -->
   <h2>Import the framework in test classes</h2>
@@ -596,6 +608,75 @@ public void customerHasExpectedStatus(DataRow row) {
     <code>faker seed=&lt;value&gt;</code>) and pinned via <code>FRAMEWORK_FAKER_SEED</code> to reproduce
     a run. Full contract: <a href="lx-test-kit_DSL_Glossary_final.html#fake-data-generation">DSL glossary —
     Fake data generation</a>.</p>
+
+  <!-- ════════════ Precondition-based tests ════════════ -->
+  <h2>Precondition-based tests (<code>@BeforeMethod</code> + <code>ChainContext</code>)</h2>
+
+  <p>Some endpoints need an entity that must already exist — registering an account for a customer created moments
+  earlier. The consumer repo creates it inside the test class via an internal API call, not via fixtures, seeded data,
+  or a CI pre-task.</p>
+
+  <p>A <strong>precondition</strong> is an optional <code>@BeforeMethod(alwaysRun = true)</code> that:</p>
+
+  <ol>
+    <li><strong>loads its input.</strong> An <em>entity-creating</em> precondition (one that POSTs a new
+      customer/account) reads its <strong>own single-row dataset</strong> through the framework loader —
+      <code>(DataRow) ExtractTestData.from(PRECOND_DATASET)[0][0]</code> — never a raw file read, because DataFaker
+      <code>#{...}</code> placeholders resolve only at <code>ExtractTestData.from()</code> load time. The
+      <code>@DataProvider</code> stays the single entry point for the <em>test method's</em> data;</li>
+    <li><strong>calls the endpoint</strong> through the normal <code>call()</code> machinery — cross-domain setup
+      endpoints are registered once under the <code>shared.endpoints.*</code> namespace;</li>
+    <li><strong>extracts server-minted values</strong> (<code>cif</code>, <code>accountNumber</code>,
+      <code>IBAN</code>, …) from the <strong>response</strong> into instance fields. They are used verbatim afterwards —
+      never re-derived client-side, never searched for later in Splunk or the target system;</li>
+    <li><strong>fails loud.</strong> A non-200 or a missing field throws <code>IllegalStateException</code> carrying the
+      full raw body, and every created value is logged via SLF4J. Setup traffic never reaches the Allure report, so the
+      exception text and that log line are the only diagnostics.</li>
+  </ol>
+
+  <p><code>@BeforeMethod</code> runs before <strong>every dataset row and every retried invocation</strong> — each
+  attempt gets a fresh entity. That is deliberate: retries become self-healing, with no dependence on a fixture a failed
+  attempt may have consumed. There is no teardown; created data accumulates and is the environment owners' concern.</p>
+
+  <p><strong>Dataset rules.</strong> One dataset per test-class — never shared between classes. Where possible the
+  dataset carries the <strong>whole JSON payload body</strong> (<code>"payload": { … }</code>), so the test copies it
+  into a mutable map and overrides only the runtime-injected keys; that keeps field-mapping code out of the test. An
+  entity-creating precondition gets its own precondition-specific dataset. Simple precondition keys (standalone
+  fallbacks, no entity creation) may live in the test-class dataset.</p>
+
+  <p><strong>Chaining between classes.</strong> When class B needs a value minted by class A's precondition, the
+  hand-off is <code>ChainContext</code> — a thin wrapper over TestNG <code>ITestContext</code> attributes: memory only,
+  dies with the test JVM, later publishes overwrite earlier ones. The producer publishes; the consumer reads with a
+  dataset fallback so the class still runs standalone:</p>
+
+  <pre data-lang="java"><code>// producer — after extracting it from the create-customer response
+ChainContext.put(ctx, "cif", cif);
+
+// consumer — chain mode wins in-session, the precondition dataset is the standalone fallback
+cif = ChainContext.find(ctx, "cif")
+        .orElse(precondRow.getString("cif"));</code></pre>
+
+  <p>Ordering is load-bearing: chained classes are listed <strong>producers first</strong> in
+  <code>testng-&lt;suite-name&gt;.xml</code> and rely on TestNG's declaration order. Mark the chain block in the XML, and
+  never reorder it or insert classes ahead of it. For the same reason a suite containing preconditions must
+  <strong>never enable TestNG parallel mode</strong> — these classes are stateful by design.</p>
+
+  <p><strong>Unique client-supplied inputs.</strong> Where the API demands a unique value the client must supply (a
+  passport uid, a short name), use <code>PrecondUid.unique()</code> — a random 13-digit string. It is deliberately
+  <em>not</em> clock-derived: CI runs suites as a matrix on parallel runners with no concurrency cap, so a
+  timestamp-only value could collide across JVMs minting ids in the same millisecond. Expectations must be computed from
+  the <strong>server echo</strong>, never from the sent input, so the generated format never leaks into an
+  assertion:</p>
+
+  <pre data-lang="java"><code>String uidValue = PrecondUid.unique();
+payload.put("UidValue", uidValue);
+payload.put("SName", "TEST" + uidValue);
+// …after the call: what the response must show, taken from what the server actually stored
+expectedUidValue = customerFull.path("Nationality").asText()
+        + customerFull.path("UidValue").asText();</code></pre>
+
+  <p>Reference implementations in <code>test-storage-bae</code>: <code>IpsRegisterIndividualTest</code> (producer) and
+  <code>IpsRegisterIndCustAccountTest</code> (consumer with dataset fallback).</p>
 
   <!-- ════════════ 6. Set the runtime env vars ════════════ -->
   <h2><span class="step-num">6</span> Set the runtime env vars</h2>

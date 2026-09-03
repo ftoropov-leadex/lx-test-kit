@@ -459,7 +459,7 @@
   <p>This runs the complete verification pipeline:</p>
   <ul>
     <li>compiles every module;</li>
-    <li>runs module-level unit tests where present (currently <code>framework-test-support</code> — dataset-loading and assertion round-trips);</li>
+    <li>runs module-level unit tests where present (currently <code>framework-test-support</code> and <code>framework-core</code> — dataset-loading, assertion round-trips, core contract tests);</li>
     <li>packages every artifact (including the <code>javadoc</code> and <code>sources</code> jars — the build applies <code>withJavadocJar()</code> / <code>withSourcesJar()</code>);</li>
     <li>prepares publishable Maven packages.</li>
   </ul>

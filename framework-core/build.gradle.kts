@@ -11,4 +11,5 @@ dependencies {
     runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.25.3")
     testImplementation("org.testng:testng:7.12.0")
     testImplementation("org.assertj:assertj-core:3.27.6")
+    testImplementation("uk.org.webcompere:system-stubs-core:2.1.8")
 }

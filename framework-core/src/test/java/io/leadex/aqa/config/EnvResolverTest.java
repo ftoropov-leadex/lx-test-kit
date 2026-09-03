@@ -89,6 +89,10 @@ public class EnvResolverTest {
         withEnvironmentVariable("LX_TEST_BOOL", "true").execute(() -> {
             assertThat(EnvResolver.bool("LX_TEST_BOOL", false)).isTrue();
         });
+        // whitespace-padded value pins the trim() contract — parseBoolean(" true ") is false without it
+        withEnvironmentVariable("LX_TEST_BOOL", " true ").execute(() -> {
+            assertThat(EnvResolver.bool("LX_TEST_BOOL", false)).isTrue();
+        });
         withEnvironmentVariable("LX_TEST_BOOL", "false").execute(() -> {
             assertThat(EnvResolver.bool("LX_TEST_BOOL", true)).isFalse();
         });

@@ -71,8 +71,9 @@ public final class RestAssuredHttpClient implements HttpClient {
         }
 
         Object body = request.body();
-        if (body != null) {
-            spec.body(body);
+        String wireBody = body == null ? null : writeBody(body);
+        if (wireBody != null) {
+            spec.body(wireBody);
         }
 
         Response response = switch (request.method()) {
@@ -96,8 +97,8 @@ public final class RestAssuredHttpClient implements HttpClient {
             if (headers != null && !headers.isEmpty()) {
                 log.debug("  request headers: {}", headers);
             }
-            if (body != null) {
-                log.debug("  request body: {}", body);
+            if (wireBody != null) {
+                log.debug("  request body: {}", wireBody);
             }
             log.debug("  response body: {}", rawBody);
         }
@@ -119,6 +120,20 @@ public final class RestAssuredHttpClient implements HttpClient {
             correlationId,
             rawBody
         );
+    }
+
+    /**
+     * Serializes the collected body fields with the framework's own mapper — the same
+     * {@link JacksonProvider#defaultMapper()} used for responses — so the bytes on the wire
+     * are independent of REST Assured's classpath-discovered mapper and of any consumer-side
+     * {@code RestAssured.config}.
+     */
+    private String writeBody(Object body) {
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to serialize request body", exception);
+        }
     }
 
     private <T> T deserializeBody(String rawBody, Class<T> responseType) {

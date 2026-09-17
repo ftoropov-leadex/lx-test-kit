@@ -387,6 +387,16 @@
     <code>.bodyField(k, null)</code> writes JSON <code>null</code>; an empty value is sent empty.
     The only way to omit a parameter is to not call the setter.</p>
 
+  <p><strong>Request-body serialization (1.1.0):</strong> <code>.bodyField()</code> values are written by the
+    framework's own Jackson mapper (<code>JacksonProvider</code>) — the same one used to read responses — not by
+    REST Assured's classpath-discovered mapper, so no consumer-side <code>RestAssured.config</code> or classpath
+    change can reshape the bytes. Dates therefore leave as ISO strings (<code>LocalDate</code> →
+    <code>"2026-01-14"</code>, <code>OffsetDateTime</code> → <code>"2026-01-14T10:30:00Z"</code>); decimals keep
+    their exact written scale. Supported value types: Jackson's defaults (strings, numbers, booleans,
+    <code>null</code>, maps, lists/arrays, POJOs) plus the <code>java.time</code> types registered by
+    <code>JavaTimeModule</code> — <code>jackson-datatype-jdk8</code> is not registered, so an
+    <code>Optional</code> in a body serializes as a bean, not unwrapped.</p>
+
   <!-- ════════════ API Response DSL ════════════ -->
   <h2 id="api-response-dsl" class="heading-wrapper"><a href="#api-response-dsl" class="heading-anchor">#</a>API Response DSL</h2>
   <p class="package">io.leadex.aqa.testsupport.assertions</p>

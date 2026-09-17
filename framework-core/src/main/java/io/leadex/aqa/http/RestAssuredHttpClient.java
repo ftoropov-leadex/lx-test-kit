@@ -110,7 +110,14 @@ public final class RestAssuredHttpClient implements HttpClient {
         T body = deserializeBody(rawBody, responseType);
         Map<String, String> headers = new LinkedHashMap<>();
         response.getHeaders().asList().forEach(header -> headers.put(header.getName(), header.getValue()));
-        String correlationId = headers.getOrDefault("X-Correlation-Id", CorrelationIdFilter.currentId());
+        String echoed = headers.get("x-correlation-id");
+        String correlationId = echoed != null ? echoed : CorrelationIdFilter.currentId();
+        if (echoed != null) {
+            String minted = CorrelationIdFilter.currentId();
+            if (minted != null && !echoed.equals(minted)) {
+                log.warn("Echoed x-correlation-id '{}' differs from the minted id '{}'", echoed, minted);
+            }
+        }
 
         return new ApiResponse<>(
             response.statusCode(),

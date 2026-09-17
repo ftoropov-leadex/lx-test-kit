@@ -362,7 +362,7 @@
   </tr>
   <tr>
     <td><code>.header()</code></td>
-    <td><code>ApiRequestBuilder</code> — Adds a per-call header, on any HTTP method. On a name collision with a base-spec header the per-call value <strong>overwrites</strong> (no comma-merge). Exception: <code>X-Correlation-Id</code> is framework-owned infrastructure — <code>CorrelationIdFilter</code> sets it last, it is always present, and a per-call value cannot override it.</td>
+    <td><code>ApiRequestBuilder</code> — Adds a per-call header, on any HTTP method. On a name collision with a base-spec header the per-call value <strong>overwrites</strong> (no comma-merge). Exception: <code>x-correlation-id</code> is framework-owned infrastructure — <code>CorrelationIdFilter</code> sets it last, it is always present, and a per-call value cannot override it.</td>
     <td><code>String</code> name + <code>String</code> value</td>
     <td><code>.header("Content-Type", "application/json")</code></td>
   </tr>

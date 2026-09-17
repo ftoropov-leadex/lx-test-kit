@@ -1,6 +1,7 @@
 package io.leadex.aqa.reporting.allure;
 
 import io.leadex.aqa.config.EnvResolver;
+import io.leadex.aqa.testsupport.testdata.DataRow;
 import io.qameta.allure.Allure;
 import io.restassured.RestAssured;
 import org.testng.ITestContext;
@@ -20,6 +21,11 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
 
     private static volatile boolean filtersRegistered;
 
+    // Thread-local bridge to the Allure bus: this listener runs on the TestNG bus, where the typed
+    // DataRow is available — but AllureTestNg starts the test case after our hooks run, so the name
+    // is applied inside AllureLifecycle.stopTestCase by AllureLogAttachListener.beforeTestStop.
+    private static final ThreadLocal<String> CASE_NAME = new ThreadLocal<>();
+
     @Override
     public void onStart(ITestContext context) {
         if (!filtersRegistered) {
@@ -32,6 +38,13 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
     @Override
     public void onTestStart(ITestResult result) {
         TestLogAppender.startCapture();
+        String caseName = caseNameOf(result);
+        if (caseName == null) {
+            // no stale name may leak into this test's beforeTestStop
+            CASE_NAME.remove();
+        } else {
+            CASE_NAME.set(caseName);
+        }
     }
 
     @Override
@@ -40,6 +53,34 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
             Allure.addAttachment("Failure stacktrace", "text/plain",
                 stackTraceOf(result.getThrowable()), ".txt");
         }
+    }
+
+    /**
+     * Names a data-driven invocation after its {@code caseName} column so report rows are
+     * distinguishable — without it every row of a method renders as raw DataRow JSON.
+     * No {@code caseName} (or a non-data-driven test) leaves the default name untouched.
+     */
+    private static String caseNameOf(ITestResult result) {
+        Object[] parameters = result.getParameters();
+        if (parameters == null) {
+            return null;
+        }
+        for (Object parameter : parameters) {
+            if (parameter instanceof DataRow row && row.caseName() != null) {
+                return row.caseName();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Hands the current test's {@code caseName} to {@link AllureLogAttachListener}, which applies
+     * it while the test case is still current. Returns {@code null} when the test has none.
+     */
+    static String drainCaseName() {
+        String caseName = CASE_NAME.get();
+        CASE_NAME.remove();
+        return caseName;
     }
 
     // Writes environment.properties and (for local runs) executor.json to the Allure results directory

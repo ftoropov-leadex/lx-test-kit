@@ -1,5 +1,7 @@
 package io.leadex.aqa.splunk.config;
 
+import io.leadex.aqa.config.EnvResolver;
+
 import java.time.Duration;
 
 // Search timing parameters: time window for queries and poll/timeout intervals for await operations.
@@ -20,6 +22,24 @@ public record SplunkSearchConfig(
             Duration.ofSeconds(60),
             Duration.ofSeconds(3),
             Duration.ofSeconds(2)
+        );
+    }
+
+    /**
+     * Reads the tunable subset from the environment, falling back to {@link #defaults()}
+     * for everything unset — behaviour is byte-identical to {@code defaults()} when no
+     * variable is present. Both variables are optional; a required one would break every
+     * consumer run that does not set it.
+     */
+    public static SplunkSearchConfig fromSystem() {
+        SplunkSearchConfig fallback = defaults();
+        return new SplunkSearchConfig(
+            EnvResolver.string("SPLUNK_EARLIEST_TIME", fallback.defaultEarliestTime()),
+            fallback.defaultLatestTime(),
+            Duration.ofSeconds(EnvResolver.integer(
+                "SPLUNK_AWAIT_TIMEOUT_S", (int) fallback.awaitTimeout().toSeconds())),
+            fallback.awaitPollInterval(),
+            fallback.jobPollInterval()
         );
     }
 }

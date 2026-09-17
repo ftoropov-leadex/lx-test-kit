@@ -2,6 +2,7 @@ package io.leadex.aqa.splunk;
 
 import io.leadex.aqa.model.ApiResponse;
 import io.leadex.aqa.splunk.config.SplunkConnectionConfig;
+import io.leadex.aqa.splunk.config.SplunkSearchConfig;
 import io.leadex.aqa.splunk.model.SplunkSearchResponse;
 
 // Singleton entry point for Splunk in tests.
@@ -12,8 +13,8 @@ public final class SplunkSupport {
     // Suites that never call Splunk no longer require SPLUNK_* env vars to be present; a missing
     // var surfaces at the first real Splunk call as IllegalStateException naming the var.
     private static final class Holder {
-        private static final SplunkClient CLIENT =
-            new SplunkClient(SplunkConnectionConfig.fromSystem());
+        private static final SplunkClient CLIENT = new SplunkClient(
+            SplunkConnectionConfig.fromSystem(), SplunkSearchConfig.fromSystem());
     }
 
     private SplunkSupport() {}

@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 
 // Splunk REST API client. Manages session-key auth, executes one-shot and async job searches,
 // and polls until results appear. Single class — no interface, no separate awaiter.
-public final class SplunkClient implements AutoCloseable {
+public final class SplunkClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SplunkClient.class);
 
@@ -219,11 +219,6 @@ public final class SplunkClient implements AutoCloseable {
             resp -> !resp.filterByField(fieldName, fieldValue).isEmpty()
         );
         return response.filterByField(fieldName, fieldValue);
-    }
-
-    @Override
-    public void close() {
-        LOGGER.debug("SplunkClient closed");
     }
 
     // ── Authentication ──────────────────────────────────────────────

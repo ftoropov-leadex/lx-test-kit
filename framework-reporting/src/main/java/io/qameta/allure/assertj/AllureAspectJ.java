@@ -128,6 +128,8 @@ public class AllureAspectJ {
         //Noise filter cuts:
         if (typeName.equals("ArrayNode")
                  || typeName.equals("ApiResponse") // assertThat [ApiResponse]
+                 || typeName.equals("SplunkSearchResponse") // assertThat [SplunkSearchResponse]
+                 || typeName.equals("SplunkSearchRow")      // assertThat [SplunkSearchRow]
                  || typeName.equals("ObjectNode") //  assert in json validation step
                  || typeName.equals("TextNode")   //  assert in json validation step (array validation)
                  || typeName.equals("IntNode")
@@ -159,6 +161,7 @@ public class AllureAspectJ {
     public void stepStart(final JoinPoint joinPoint) {
         final MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         final String methodName = methodSignature.getName();
+        final String declaringType = methodSignature.getDeclaringType().getSimpleName();
         final Object[] args = joinPoint.getArgs();
 
         if (shouldSkip(methodName, args)) {
@@ -168,7 +171,7 @@ public class AllureAspectJ {
 
         callStack.get().push(Boolean.FALSE);      // real step opened below
         final String uuid = UUID.randomUUID().toString();
-        final String pretty = prettify(methodName, args);
+        final String pretty = prettify(methodName, declaringType, args);
         final String name = pretty != null
                 ? pretty
                 : (args.length > 0
@@ -221,10 +224,12 @@ public class AllureAspectJ {
     /*
      * Signature-aware skip:
      *  - isNotNull / assertThat are always navigation/internal noise → always skipped.
-     *  - body / first / at are skipped ONLY when they carry no trailing Consumer arg. This
-     *    keeps Splunk's no-arg first() step-less (it must never blanket-removed from the skip
-     *    list) while letting the new lambda-scoped grouping overloads emit a real, balanced
-     *    step whose field/contract children nest inside it.
+     *  - body / first / at carry a trailing Consumer in every framework DSL (body(Consumer),
+     *    first(Consumer), at(int, Consumer), matching(Predicate, Consumer)), so this gate never fires
+     *    for framework code — it stays as a guard for consumer-authored AbstractAssert subclasses that
+     *    may still define a flat, navigation-only overload. A Consumer-carrying call emits a real,
+     *    balanced step whose field/contract children nest inside it.
+     *  - matching is not listed here at all (like the leaves): it is always a frame, never skipped.
      */
     private boolean shouldSkip(final String methodName, final Object[] args) {
         if (methodName.equals("isNotNull") || methodName.equals("assertThat")) {
@@ -238,7 +243,7 @@ public class AllureAspectJ {
         return false;
     }
 
-    private String prettify(final String methodName, final Object[] args) {
+    private String prettify(final String methodName, final String declaringType, final Object[] args) {
         return switch (methodName) {
             case "isEqualTo" -> {                           // cut's JSON in report step to 80smb
                 if (args.length == 0 || args[0] == null) {  // JSON null-protection
@@ -257,8 +262,18 @@ public class AllureAspectJ {
             // Lambda-scoped grouping methods: trailing Consumer arg ignored, name from args[0].
             case "field" -> "field '" + args[0] + "'";
             case "body"  -> "body";
-            case "first" -> "first";
+            case "first" -> "SplunkResponseAssert".equals(declaringType) ? "log record" : "first";
             case "at"    -> "at[" + args[0] + "]";
+            // Splunk leaves. hasField is arity-branched: BodyAssert.hasField(dotPath) is a
+            // one-arg published method and must keep the generic rendering it has today.
+            case "hasField" -> args.length == 1
+                    ? "Contains field '" + args[0] + "'"
+                    : "Contains field '" + args[0] + "' = '" + args[1] + "'";
+            case "fieldContains" -> "field '" + args[0] + "' contains '" + args[1] + "'";
+            case "hasSource" -> "source is '" + args[0] + "'";
+            case "hasHost" -> "host is '" + args[0] + "'";
+            case "anyResultHasField" -> "anyResultHasField '" + args[0] + "' = '" + args[1] + "'";
+            case "matching" -> "matching"; // predicate + consumer are lambdas: nothing to render
             default           -> null;
         };
     }

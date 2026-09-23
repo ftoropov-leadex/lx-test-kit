@@ -798,7 +798,7 @@ var response = call("get-customerInfo", String.class)
 
   <h3 id="splunk-data-model" class="heading-wrapper"><a href="#splunk-data-model" class="heading-anchor">#</a>Data model</h3>
   <p>
-    <strong><code>SplunkSearchResponse</code></strong> is an immutable record wrapping an ordered <code>List&lt;SplunkSearchResult&gt;</code>.
+    <strong><code>SplunkSearchResponse</code></strong> is an immutable record wrapping an ordered <code>List&lt;SplunkSearchRow&gt;</code>.
     It is the return type of every search/await operation on <code>SplunkClient</code> and the input to
     <code>SplunkResponseAssert.assertThat()</code>. In a test, it acts as the bridge between
     &ldquo;poll Splunk until logs appear&rdquo; and &ldquo;assert on the log entries.&rdquo;
@@ -807,7 +807,7 @@ var response = call("get-customerInfo", String.class)
     validation logic.
   </p>
   <p>
-    <strong><code>SplunkSearchResult</code></strong> is the per-row record: well-known fields
+    <strong><code>SplunkSearchRow</code></strong> is the per-row record: well-known fields
     (<code>_raw</code>, <code>_time</code>, <code>source</code>, <code>sourcetype</code>, <code>host</code>,
     <code>index</code>) plus a <code>fields</code> map of everything else.
   </p>
@@ -989,16 +989,16 @@ var response = call("get-customerInfo", String.class)
     <td><code>.anyResultHasField("tracePoint", "IN")</code></td>
   </tr>
   <tr>
-    <td><code>.first()</code></td>
-    <td><code>SplunkResponseAssert</code> — Navigates to the first search result, returns <code>SplunkResultAssert</code>. Requires non-empty response. <span class="note">Terminal navigation — no <code>.back()</code>.</span></td>
-    <td>—</td>
-    <td><code>.isNotEmpty().first().hasField("tracePoint", "OUT")</code></td>
+    <td><code>.first(r -&gt; …)</code></td>
+    <td><code>SplunkResponseAssert</code> — Navigates to the first search result and runs the per-result assertions inside a collapsible Allure step; returns <code>SplunkResponseAssert</code> for chaining. Assumes the row you want is the first one — prefer <code>.matching(…)</code> when that is an assumption.</td>
+    <td><code>Consumer&lt;SplunkRowAssert&gt;</code></td>
+    <td><code>.isNotEmpty().first(r -&gt; r.hasField("tracePoint", "OUT"))</code></td>
   </tr>
   <tr>
-    <td><code>.result()</code></td>
-    <td><code>SplunkResponseAssert</code> — Navigates to the result at a given index, returns <code>SplunkResultAssert</code>. Requires valid index. <span class="note">Terminal navigation — no <code>.back()</code>.</span></td>
-    <td><code>int</code></td>
-    <td><code>.isNotEmpty().result(1).rawContains("error")</code></td>
+    <td><code>.matching(pred, r -&gt; …)</code></td>
+    <td><code>SplunkResponseAssert</code> — Navigates to the first search result satisfying the predicate and runs the per-result assertions inside a collapsible Allure step; fails when nothing matches. The content selector — no row index is involved.</td>
+    <td><code>Predicate&lt;SplunkSearchRow&gt;</code> + <code>Consumer&lt;SplunkRowAssert&gt;</code></td>
+    <td><code>.isNotEmpty().matching(r -&gt; "ORDER_CREATED".equals(r.field("tracePoint")), r -&gt; r.rawContains("CUST-001"))</code></td>
   </tr>
   </tbody>
   </table>
@@ -1018,33 +1018,33 @@ var response = call("get-customerInfo", String.class)
   <tbody>
   <tr>
     <td><code>.hasField()</code></td>
-    <td><code>SplunkResultAssert</code> — Asserts a named field equals the expected string value.</td>
+    <td><code>SplunkRowAssert</code> — Asserts a named field equals the expected string value. Reached inside a <code>.first(…)</code> / <code>.matching(…)</code> frame — the class has no public entry of its own.</td>
     <td><code>String</code> fieldName + <code>String</code> expectedValue</td>
-    <td><code>.first().hasField("tracePoint", "OUT")</code></td>
+    <td><code>.first(r -&gt; r.hasField("tracePoint", "OUT"))</code></td>
   </tr>
   <tr>
     <td><code>.fieldContains()</code></td>
-    <td><code>SplunkResultAssert</code> — Asserts a named field's value contains the given substring.</td>
+    <td><code>SplunkRowAssert</code> — Asserts a named field's value contains the given substring.</td>
     <td><code>String</code> fieldName + <code>String</code> substring</td>
-    <td><code>.first().fieldContains("message", "timeout")</code></td>
+    <td><code>.first(r -&gt; r.fieldContains("message", "timeout"))</code></td>
   </tr>
   <tr>
     <td><code>.rawContains()</code></td>
-    <td><code>SplunkResultAssert</code> — Asserts the raw <code>_raw</code> field contains the given substring.</td>
+    <td><code>SplunkRowAssert</code> — Asserts the raw <code>_raw</code> field contains the given substring.</td>
     <td><code>String</code></td>
-    <td><code>.first().rawContains("ERROR 500")</code></td>
+    <td><code>.first(r -&gt; r.rawContains("ERROR 500"))</code></td>
   </tr>
   <tr>
     <td><code>.hasSource()</code></td>
-    <td><code>SplunkResultAssert</code> — Asserts the <code>source</code> field equals the expected value.</td>
+    <td><code>SplunkRowAssert</code> — Asserts the <code>source</code> field equals the expected value.</td>
     <td><code>String</code></td>
-    <td><code>.first().hasSource("/var/log/app.log")</code></td>
+    <td><code>.first(r -&gt; r.hasSource("/var/log/app.log"))</code></td>
   </tr>
   <tr>
     <td><code>.hasHost()</code></td>
-    <td><code>SplunkResultAssert</code> — Asserts the <code>host</code> field equals the expected value.</td>
+    <td><code>SplunkRowAssert</code> — Asserts the <code>host</code> field equals the expected value.</td>
     <td><code>String</code></td>
-    <td><code>.first().hasHost("prod-node-01")</code></td>
+    <td><code>.first(r -&gt; r.hasHost("prod-node-01"))</code></td>
   </tr>
   </tbody>
   </table>
@@ -1052,8 +1052,9 @@ var response = call("get-customerInfo", String.class)
 
   <h3 id="splunk-chain-invariants" class="heading-wrapper"><a href="#splunk-chain-invariants" class="heading-anchor">#</a>Splunk chain invariants</h3>
   <ul>
-    <li><code>.first()</code> and <code>.result()</code> return <code>SplunkResultAssert</code> — terminal navigation, no <code>.back()</code>. Do response-level assertions (<code>.isNotEmpty()</code>, <code>.hasResultCount()</code>, <code>.anyResultHasField(…)</code>) <strong>before</strong> navigating into results.</li>
-    <li><code>.first()</code> and <code>.result()</code> require a non-empty response — guard with <code>.isNotEmpty()</code>.</li>
+    <li><code>.first(r -&gt; …)</code> / <code>.matching(pred, r -&gt; …)</code> are the only navigation. Both take a <code>Consumer</code>, both return <code>SplunkResponseAssert</code>, and both run the per-result assertions inside one Allure step, so the report nests <code>hasField</code> / <code>fieldContains</code> / <code>rawContains</code> / <code>hasSource</code> / <code>hasHost</code> under a single frame instead of printing them as siblings. There is no flat, non-scoped form, and <strong>no index navigation at all</strong> — positional access stays on the model (<code>results()</code>).</li>
+    <li>Response-level assertions (<code>.isNotEmpty()</code>, <code>.hasResultCount()</code>, <code>.anyResultHasField(…)</code>) come <strong>before</strong> the frame; the chain returns to the response scope after it, so it can continue.</li>
+    <li>The non-empty precondition is built into the navigation (<code>requireResults()</code>), and <code>.matching(…)</code> fails with its own message when nothing matches; an explicit <code>.isNotEmpty()</code> is optional and is only needed when that assertion should itself be visible in the report.</li>
     <li><code>SplunkSupport.awaitLogsFor(…)</code> polls with Awaitility (default timeout 60&nbsp;s, poll interval 3&nbsp;s). Re-authenticates on 401 (session expiry).</li>
     <li>All assertion methods extend AssertJ <code>AbstractAssert</code> → auto-stepped by <code>AllureAspectJ</code>.</li>
   </ul>
@@ -1078,9 +1079,9 @@ public void shouldLogTracePoints() {
     SplunkResponseAssert.assertThat(logs)
             .isNotEmpty()
             .hasResultCount(1)
-            .first()
-                .hasField("tracePoint", "ORDER_CREATED")
-                .rawContains("CUST-001");
+            .first(r -&gt; r
+                    .hasField("tracePoint", "ORDER_CREATED")
+                    .rawContains("CUST-001"));
 }</code></pre>
 
   <div class="footer">

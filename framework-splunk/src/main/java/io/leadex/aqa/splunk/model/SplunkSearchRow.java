@@ -5,7 +5,7 @@ import java.util.Map;
 
 // A single log event returned from a Splunk search.
 // Well-known fields (_raw, _time, source, etc.) are typed; everything else is in the fields map.
-public record SplunkSearchResult(
+public record SplunkSearchRow(
     String raw,          // _raw: the full original log line text
     Instant time,        // _time: event timestamp, null if Splunk returned an unparseable value
     String source,       // source: log origin path or identifier

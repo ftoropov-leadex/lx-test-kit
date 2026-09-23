@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 // Ordered list of Splunk search results with chainable filter and accessor helpers.
 // Returned by all search and await operations on SplunkClient.
-public record SplunkSearchResponse(List<SplunkSearchResult> results) {
+public record SplunkSearchResponse(List<SplunkSearchRow> results) {
 
     // True when the search produced no results.
     public boolean isEmpty() {
@@ -20,8 +20,8 @@ public record SplunkSearchResponse(List<SplunkSearchResult> results) {
     }
 
     // Returns a new response containing only the results that match the predicate.
-    public SplunkSearchResponse filter(Predicate<SplunkSearchResult> predicate) {
-        List<SplunkSearchResult> filtered = results.stream()
+    public SplunkSearchResponse filter(Predicate<SplunkSearchRow> predicate) {
+        List<SplunkSearchRow> filtered = results.stream()
             .filter(predicate)
             .collect(Collectors.toList());
         return new SplunkSearchResponse(filtered);
@@ -43,7 +43,7 @@ public record SplunkSearchResponse(List<SplunkSearchResult> results) {
     }
 
     // Returns the first result, or empty if no results exist.
-    public Optional<SplunkSearchResult> first() {
+    public Optional<SplunkSearchRow> first() {
         return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 

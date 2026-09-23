@@ -4,7 +4,7 @@ import io.leadex.aqa.json.JacksonProvider;
 import io.leadex.aqa.splunk.config.SplunkConnectionConfig;
 import io.leadex.aqa.splunk.config.SplunkSearchConfig;
 import io.leadex.aqa.splunk.model.SplunkSearchResponse;
-import io.leadex.aqa.splunk.model.SplunkSearchResult;
+import io.leadex.aqa.splunk.model.SplunkSearchRow;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
@@ -66,7 +66,7 @@ public final class SplunkClient {
                 .formParam("output_mode", "json")
                 .post(connectionConfig.baseUrl() + SEARCH_EXPORT_ENDPOINT)
         );
-        List<SplunkSearchResult> results = parseExportResults(response.getBody().asString());
+        List<SplunkSearchRow> results = parseExportResults(response.getBody().asString());
         LOGGER.info("One-shot search returned {} result(s)", results.size());
         return new SplunkSearchResponse(results);
     }
@@ -129,7 +129,7 @@ public final class SplunkClient {
                 .queryParam("count", 0)
                 .get(connectionConfig.baseUrl() + SEARCH_JOBS_ENDPOINT + "/" + jobSid + "/results")
         );
-        List<SplunkSearchResult> results = parseJobResults(response.getBody().asString());
+        List<SplunkSearchRow> results = parseJobResults(response.getBody().asString());
         LOGGER.info("Job {} returned {} result(s)", jobSid, results.size());
         return new SplunkSearchResponse(results);
     }
@@ -290,11 +290,11 @@ public final class SplunkClient {
     // ── Response parsing ────────────────────────────────────────────
 
     // Parses NDJSON from /export endpoint — one JSON object per line, each with a "result" field.
-    private List<SplunkSearchResult> parseExportResults(String responseBody) {
+    private List<SplunkSearchRow> parseExportResults(String responseBody) {
         if (responseBody == null || responseBody.isBlank()) {
             return Collections.emptyList();
         }
-        List<SplunkSearchResult> results = new ArrayList<>();
+        List<SplunkSearchRow> results = new ArrayList<>();
         for (String line : responseBody.split("\n")) {
             String trimmed = line.trim();
             if (trimmed.isEmpty()) continue;
@@ -311,7 +311,7 @@ public final class SplunkClient {
     }
 
     // Parses the "results" array from an async job's result response.
-    private List<SplunkSearchResult> parseJobResults(String responseBody) {
+    private List<SplunkSearchRow> parseJobResults(String responseBody) {
         if (responseBody == null || responseBody.isBlank()) {
             return Collections.emptyList();
         }
@@ -321,7 +321,7 @@ public final class SplunkClient {
             if (!resultsNode.isArray()) {
                 return Collections.emptyList();
             }
-            List<SplunkSearchResult> results = new ArrayList<>();
+            List<SplunkSearchRow> results = new ArrayList<>();
             for (JsonNode node : resultsNode) {
                 results.add(toSearchResult(node));
             }
@@ -331,9 +331,9 @@ public final class SplunkClient {
         }
     }
 
-    // Maps a single result JSON node to a SplunkSearchResult record.
+    // Maps a single result JSON node to a SplunkSearchRow record.
     // Extracts well-known fields (_raw, _time, source, etc.) plus all remaining fields into a map.
-    private SplunkSearchResult toSearchResult(JsonNode resultNode) {
+    private SplunkSearchRow toSearchResult(JsonNode resultNode) {
         String raw = resultNode.path("_raw").asText(null);
         String timeStr = resultNode.path("_time").asText(null);
         String source = resultNode.path("source").asText(null);
@@ -345,7 +345,7 @@ public final class SplunkClient {
         for (Map.Entry<String, JsonNode> entry : resultNode.properties()) {
             fields.put(entry.getKey(), entry.getValue().asText());
         }
-        return new SplunkSearchResult(raw, time, source, sourceType, host, index,
+        return new SplunkSearchRow(raw, time, source, sourceType, host, index,
             Collections.unmodifiableMap(fields));
     }
 

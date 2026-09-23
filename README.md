@@ -47,7 +47,7 @@ framework-bundle  (umbrella, re-exports everything)
 | `framework-core` | `HttpClient` interface, `RestAssuredHttpClient`, `CorrelationIdFilter`, config, `ApiResponse<T>` |
 | `framework-test-support` | `BaseApiTest`, `ApiRequestBuilder`, AssertJ DSL (`ApiResponseAssert`, `BodyAssert`, `FieldAssert`), schema/snapshot validators, retry, network detection |
 | `framework-reporting` | Allure TestNG listener, `AllureHttpFilter` (request/response attachments), `AllureAspectJ` LTW for automatic assertion steps |
-| `framework-splunk` | `SplunkClient`, `SplunkQueryBuilder`, `SplunkResponseAssert` / `SplunkResultAssert` DSL |
+| `framework-splunk` | `SplunkClient`, `SplunkQueryBuilder`, `SplunkResponseAssert` / `SplunkRowAssert` DSL |
 | `framework-bundle` | Umbrella POM — no source |
 
 ## Test architecture

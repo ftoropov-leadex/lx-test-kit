@@ -126,6 +126,8 @@ ApiResponseAssert.assertThat(response)
 | `FRAMEWORK_RETRY_COUNT` | no | `0` | `FrameworkRetryAnalyzer` (max retries; `0` = off) |
 | `FRAMEWORK_RETRY_ON` | no | `""` | `FrameworkRetryAnalyzer` (csv: `network`, `timeout`, `5xx`; empty = any non-assertion failure) |
 | `FRAMEWORK_RETRY_DELAY_MS` | no | `0` | `FrameworkRetryAnalyzer` (sleep between attempts, ms) |
+| `FRAMEWORK_REPORT_HIDE_POLLS` | no | `true` | `AllureHttpFilter` (`false` = report every HTTP call, plumbing included) |
+| `FRAMEWORK_REPORT_POLL_PATHS` | no | `/services/auth/login,/services/search/jobs/export,/services/search/jobs/*` | `AllureHttpFilter` (csv of path patterns whose calls are executed but not reported as steps; `*` = one path segment, `**` = tail) |
 | `SPLUNK_BASE_URL` | yes* | — | `SplunkConnectionConfig` |
 | `SPLUNK_ALLOW_UNTRUSTED_SSL` | no | `false` | `SplunkConnectionConfig` |
 | `SPLUNK_EARLIEST_TIME` | no | `-15m` | `SplunkSearchConfig` (SPL `earliest_time` for default queries) |

@@ -613,7 +613,7 @@ ApiResponseAssert.assertThat(response)
   </tr>
   <tr>
     <td><code>.caseName()</code> / <code>.toString()</code></td>
-    <td><code>DataRow</code> — <code>caseName()</code> returns the row's <code>caseName</code> string, or <code>null</code> when the key is absent. <code>toString()</code> renders the row as compact JSON — this is the per-invocation label in the Allure report.</td>
+    <td><code>DataRow</code> — <code>caseName()</code> returns the row's <code>caseName</code> string, or <code>null</code> when the key is absent. <code>toString()</code> renders the row as compact JSON — the Allure report names the invocation <code>methodName — caseName</code>.</td>
     <td>—</td>
     <td><code>row.caseName()</code></td>
   </tr>
@@ -698,7 +698,7 @@ public void customerMatchesDataset(DataRow row) {
   <ul>
     <li><strong>Always quote string values</strong> in dataset JSON — an unquoted <code>9900083901</code> parses as a number, and <code>row.getString("customerId")</code> fails at first use with an <code>IllegalStateException</code> naming the dataset, row, and field.</li>
     <li><strong>Decimals are extracted via <code>row.getDecimal(...)</code>, never <code>double</code>/<code>float</code></strong> — the loader parses decimals as <code>BigDecimal</code> with the exact written scale (<code>100.00</code> never becomes <code>100.0</code>). Assert them response-side via <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
-    <li>Optional <code>caseName</code> key: when present in a row, its value must be a non-blank, dataset-unique string — it anchors the per-invocation entry in the Allure report.</li>
+    <li>Optional <code>caseName</code> key: when present in a row, its value must be a non-blank, dataset-unique string — the Allure report names each invocation <code>methodName — caseName</code>, so the case does not replace the method name.</li>
     <li>Nested structures are deep-unmodifiable (TestNG retry re-uses the same row); explicit <code>null</code>s are preserved — passed to <code>.bodyField(k, v)</code> they are written as JSON <code>null</code>, passed to <code>.query()</code> / <code>.header()</code> / <code>.pathParam()</code> as the literal string <code>"null"</code>. To omit a parameter, don't call the setter.</li>
     <li>String values may carry DataFaker <code>#{...}</code> placeholders, resolved once at dataset load — see <a href="#fake-data-generation">Fake data generation</a> below.</li>
   </ul>

@@ -24,7 +24,7 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
     // Thread-local bridge to the Allure bus: this listener runs on the TestNG bus, where the typed
     // DataRow is available — but AllureTestNg starts the test case after our hooks run, so the name
     // is applied inside AllureLifecycle.stopTestCase by AllureLogAttachListener.beforeTestStop.
-    private static final ThreadLocal<String> CASE_NAME = new ThreadLocal<>();
+    private static final ThreadLocal<String> DISPLAY_NAME = new ThreadLocal<>();
 
     @Override
     public void onStart(ITestContext context) {
@@ -41,9 +41,9 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
         String caseName = caseNameOf(result);
         if (caseName == null) {
             // no stale name may leak into this test's beforeTestStop
-            CASE_NAME.remove();
+            DISPLAY_NAME.remove();
         } else {
-            CASE_NAME.set(caseName);
+            DISPLAY_NAME.set(displayNameOf(result, caseName));
         }
     }
 
@@ -74,13 +74,24 @@ public final class AllureTestNgListener implements ITestListener, ISuiteListener
     }
 
     /**
-     * Hands the current test's {@code caseName} to {@link AllureLogAttachListener}, which applies
+     * {@code methodName — caseName}. Neither half identifies a row on its own: the method repeats
+     * across the rows of one method, and the caseName repeats across methods that share one dataset
+     * row (observed in a consumer run — five different tests all rendered as {@code customer-search}).
+     * The pair is unique in both configurations.
+     */
+    private static String displayNameOf(ITestResult result, String caseName) {
+        String methodName = result.getMethod().getMethodName();
+        return (methodName == null || methodName.isBlank()) ? caseName : methodName + " — " + caseName;
+    }
+
+    /**
+     * Hands the current test's display name to {@link AllureLogAttachListener}, which applies
      * it while the test case is still current. Returns {@code null} when the test has none.
      */
-    static String drainCaseName() {
-        String caseName = CASE_NAME.get();
-        CASE_NAME.remove();
-        return caseName;
+    static String drainDisplayName() {
+        String displayName = DISPLAY_NAME.get();
+        DISPLAY_NAME.remove();
+        return displayName;
     }
 
     // Writes environment.properties and (for local runs) executor.json to the Allure results directory

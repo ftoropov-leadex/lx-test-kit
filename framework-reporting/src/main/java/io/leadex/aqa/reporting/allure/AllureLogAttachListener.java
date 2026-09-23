@@ -7,7 +7,7 @@ import io.qameta.allure.model.TestResult;
 
 /**
  * Attaches the captured test-execution log to the Allure result, and names a data-driven
- * invocation after its {@code caseName} column.
+ * invocation {@code methodName — caseName}.
  *
  * <p>Runs on Allure's lifecycle bus rather than TestNG's. {@code beforeTestStop} fires inside
  * {@code AllureLifecycle.stopTestCase}, before {@code threadContext.clear()} and before the result
@@ -16,9 +16,9 @@ import io.qameta.allure.model.TestResult;
  * {@link AllureTestNgListener}) cannot guarantee this: under SPI registration its
  * {@code onTestStart} runs before the case exists, and its {@code onTestSuccess}/
  * {@code onTestFailure} may run after {@code AllureTestNg} has already stopped and written the
- * case — observed on a real run, not assumed. The {@code caseName} itself is produced on the
+ * case — observed on a real run, not assumed. The name itself is produced on the
  * TestNG bus, where the typed {@code DataRow} lives, and carried over the ThreadLocal bridge in
- * {@link AllureTestNgListener#drainCaseName()}.
+ * {@link AllureTestNgListener#drainDisplayName()}.
  *
  * <p>Discovered via {@code META-INF/services/io.qameta.allure.listener.TestLifecycleListener};
  * requires a public no-arg constructor for {@link java.util.ServiceLoader}.
@@ -27,9 +27,9 @@ public final class AllureLogAttachListener implements TestLifecycleListener {
 
     @Override
     public void beforeTestStop(TestResult result) {
-        String caseName = AllureTestNgListener.drainCaseName();
-        if (caseName != null) {
-            Allure.getLifecycle().updateTestCase(testCase -> testCase.setName(caseName));
+        String displayName = AllureTestNgListener.drainDisplayName();
+        if (displayName != null) {
+            Allure.getLifecycle().updateTestCase(testCase -> testCase.setName(displayName));
         }
         String logs = TestLogAppender.stopAndDrain();
         if (!logs.isBlank()) {

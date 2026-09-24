@@ -19,7 +19,6 @@ AllureTestNgListener-refs.md
 .opencode/
 package-lock.json
 package.json
-publish.yml
 framework-messaging-rabbitmq/
 framework-db-oracle/
 .agentic/

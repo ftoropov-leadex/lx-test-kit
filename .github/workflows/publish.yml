@@ -1,0 +1,41 @@
+name: publish
+
+# Release-triggered, not push-triggered.
+#
+# GitHub Packages rejects a version that already exists, so a `push: main` trigger would fail on
+# every merge that does not bump `gradle.properties`. Tagging is the release action instead.
+# The docs site is unaffected: it deploys separately through the Cloudflare Workers Builds Git
+# integration (app `cloudflare-workers-and-pages`, config `docs/wrangler.jsonc`) on every push.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      # `build` before `publish`: the test gate must pass before artifacts leave the building.
+      - name: Build and publish to GitHub Packages
+        run: ./gradlew clean build publish
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -71,8 +71,9 @@ public final class RestAssuredHttpClient implements HttpClient {
         }
 
         Object body = request.body();
-        if (body != null) {
-            spec.body(body);
+        String wireBody = body == null ? null : writeBody(body);
+        if (wireBody != null) {
+            spec.body(wireBody);
         }
 
         Response response = switch (request.method()) {
@@ -96,8 +97,8 @@ public final class RestAssuredHttpClient implements HttpClient {
             if (headers != null && !headers.isEmpty()) {
                 log.debug("  request headers: {}", headers);
             }
-            if (body != null) {
-                log.debug("  request body: {}", body);
+            if (wireBody != null) {
+                log.debug("  request body: {}", wireBody);
             }
             log.debug("  response body: {}", rawBody);
         }
@@ -109,7 +110,14 @@ public final class RestAssuredHttpClient implements HttpClient {
         T body = deserializeBody(rawBody, responseType);
         Map<String, String> headers = new LinkedHashMap<>();
         response.getHeaders().asList().forEach(header -> headers.put(header.getName(), header.getValue()));
-        String correlationId = headers.getOrDefault("X-Correlation-Id", CorrelationIdFilter.currentId());
+        String echoed = headers.get("x-correlation-id");
+        String correlationId = echoed != null ? echoed : CorrelationIdFilter.currentId();
+        if (echoed != null) {
+            String minted = CorrelationIdFilter.currentId();
+            if (minted != null && !echoed.equals(minted)) {
+                log.warn("Echoed x-correlation-id '{}' differs from the minted id '{}'", echoed, minted);
+            }
+        }
 
         return new ApiResponse<>(
             response.statusCode(),
@@ -119,6 +127,20 @@ public final class RestAssuredHttpClient implements HttpClient {
             correlationId,
             rawBody
         );
+    }
+
+    /**
+     * Serializes the collected body fields with the framework's own mapper — the same
+     * {@link JacksonProvider#defaultMapper()} used for responses — so the bytes on the wire
+     * are independent of REST Assured's classpath-discovered mapper and of any consumer-side
+     * {@code RestAssured.config}.
+     */
+    private String writeBody(Object body) {
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to serialize request body", exception);
+        }
     }
 
     private <T> T deserializeBody(String rawBody, Class<T> responseType) {

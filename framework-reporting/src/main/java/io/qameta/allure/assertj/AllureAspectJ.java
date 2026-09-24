@@ -128,6 +128,8 @@ public class AllureAspectJ {
         //Noise filter cuts:
         if (typeName.equals("ArrayNode")
                  || typeName.equals("ApiResponse") // assertThat [ApiResponse]
+                 || typeName.equals("SplunkSearchResponse") // assertThat [SplunkSearchResponse]
+                 || typeName.equals("SplunkSearchRow")      // assertThat [SplunkSearchRow]
                  || typeName.equals("ObjectNode") //  assert in json validation step
                  || typeName.equals("TextNode")   //  assert in json validation step (array validation)
                  || typeName.equals("IntNode")
@@ -159,6 +161,7 @@ public class AllureAspectJ {
     public void stepStart(final JoinPoint joinPoint) {
         final MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         final String methodName = methodSignature.getName();
+        final String declaringType = methodSignature.getDeclaringType().getSimpleName();
         final Object[] args = joinPoint.getArgs();
 
         if (shouldSkip(methodName, args)) {
@@ -168,7 +171,7 @@ public class AllureAspectJ {
 
         callStack.get().push(Boolean.FALSE);      // real step opened below
         final String uuid = UUID.randomUUID().toString();
-        final String pretty = prettify(methodName, args);
+        final String pretty = prettify(methodName, declaringType, args);
         final String name = pretty != null
                 ? pretty
                 : (args.length > 0
@@ -221,10 +224,12 @@ public class AllureAspectJ {
     /*
      * Signature-aware skip:
      *  - isNotNull / assertThat are always navigation/internal noise → always skipped.
-     *  - body / first / at are skipped ONLY when they carry no trailing Consumer arg. This
-     *    keeps Splunk's no-arg first() step-less (it must never blanket-removed from the skip
-     *    list) while letting the new lambda-scoped grouping overloads emit a real, balanced
-     *    step whose field/contract children nest inside it.
+     *  - body / first / at carry a trailing Consumer in every framework DSL (body(Consumer),
+     *    first(Consumer), at(int, Consumer), matching(Predicate, Consumer)), so this gate never fires
+     *    for framework code — it stays as a guard for consumer-authored AbstractAssert subclasses that
+     *    may still define a flat, navigation-only overload. A Consumer-carrying call emits a real,
+     *    balanced step whose field/contract children nest inside it.
+     *  - matching is not listed here at all (like the leaves): it is always a frame, never skipped.
      */
     private boolean shouldSkip(final String methodName, final Object[] args) {
         if (methodName.equals("isNotNull") || methodName.equals("assertThat")) {
@@ -238,7 +243,7 @@ public class AllureAspectJ {
         return false;
     }
 
-    private String prettify(final String methodName, final Object[] args) {
+    private String prettify(final String methodName, final String declaringType, final Object[] args) {
         return switch (methodName) {
             case "isEqualTo" -> {                           // cut's JSON in report step to 80smb
                 if (args.length == 0 || args[0] == null) {  // JSON null-protection
@@ -250,15 +255,37 @@ public class AllureAspectJ {
                         : "equals '" + value + "'";
             }
             case "hasStatus" -> "status " + args[0];
+            // FieldAssert terminals — each reads as a clause inside its `field 'x'` frame.
+            case "hasValue"  -> "value is '" + args[0] + "'";
+            case "isPresent" -> "is present";
             case "isNotBlank" -> "not blank";
-            case "isNotEmpty" -> "not empty";
+            // isNotEmpty is declared on three assert classes with different meanings — name it per
+            // scope. FieldAssert keeps the generic wording: its leaves already sit inside a
+            // field 'x' frame, and prettify has no receiver state to name the path.
+            case "isNotEmpty" -> switch (declaringType) {
+                case "SplunkResponseAssert" -> "splunk response is not empty";
+                case "BodyAssert"           -> "body is a non-empty array";
+                default                     -> "not empty";
+            };
             case "matchesSchema" -> "matches schema";
             case "matchesSnapshot" -> "matches snapshot";
             // Lambda-scoped grouping methods: trailing Consumer arg ignored, name from args[0].
             case "field" -> "field '" + args[0] + "'";
             case "body"  -> "body";
-            case "first" -> "first";
+            case "first" -> "SplunkResponseAssert".equals(declaringType) ? "log record" : "first";
             case "at"    -> "at[" + args[0] + "]";
+            // Splunk leaves. hasField is arity-branched: the 1-arg overload is BodyAssert's structural
+            // check ("exists and is non-null"), the 2-arg one is SplunkRowAssert's value equality.
+            case "hasField" -> args.length == 1
+                    ? "field '" + args[0] + "' is present"
+                    : "field '" + args[0] + "' has value '" + args[1] + "'";
+            case "fieldContains" -> "field '" + args[0] + "' contains '" + args[1] + "'";
+            case "hasSource" -> "source is '" + args[0] + "'";
+            case "hasHost" -> "host is '" + args[0] + "'";
+            case "rawContains" -> "log record contains '" + args[0] + "'";
+            case "hasResultCount" -> "log record count is " + args[0];
+            case "anyResultHasField" -> "any log record has field '" + args[0] + "' = '" + args[1] + "'";
+            case "matching" -> "matching"; // predicate + consumer are lambdas: nothing to render
             default           -> null;
         };
     }

@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the correlation-id contract: per-thread lifecycle without cross-thread bleed, and
- * injection of {@code X-Correlation-Id} into every request exactly when an ID is set.
+ * injection of {@code x-correlation-id} into every request exactly when an ID is set.
  * {@code filter()} is exercised through JDK dynamic proxies — no socket involved.
  */
 public class CorrelationIdFilterTest {
@@ -82,7 +82,7 @@ public class CorrelationIdFilterTest {
         try {
             var wire = wire();
             new CorrelationIdFilter().filter(wire.requestSpec(), wire.responseSpec(), wire.context());
-            assertThat(wire.capturedHeaders()).containsExactly("X-Correlation-Id", "trace-9");
+            assertThat(wire.capturedHeaders()).containsExactly("x-correlation-id", "trace-9");
             assertThat(wire.nextCalled().get()).isTrue();
         } finally {
             CorrelationIdFilter.clear();

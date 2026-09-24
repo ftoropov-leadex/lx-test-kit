@@ -15,7 +15,7 @@ import java.util.Map;
  * @param queryParams query parameters; empty when none were set
  * @param headers     per-call headers; empty when none were set. On a name collision
  *                    with a base-spec header the per-call value overwrites
- *                    ({@code X-Correlation-Id} excepted — framework-owned, set last
+ *                    ({@code x-correlation-id} excepted — framework-owned, set last
  *                    by {@link CorrelationIdFilter})
  * @param body        request body, or {@code null} for a bodiless request; transmittable
  *                    on every verb, including GET and DELETE

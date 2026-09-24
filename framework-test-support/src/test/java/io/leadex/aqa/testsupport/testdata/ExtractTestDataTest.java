@@ -15,7 +15,12 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +77,7 @@ public class ExtractTestDataTest {
 
     @Test
     public void bodyFieldWritesExactDecimalOnTheWire() {
+        capturedBodies.clear();
         Object[][] rows = ExtractTestData.from(DATASET);
         RestAssuredHttpClient client = new RestAssuredHttpClient(
                 new RequestSpecBuilder().setContentType(ContentType.JSON).build());
@@ -86,5 +92,42 @@ public class ExtractTestDataTest {
         assertThat(capturedBodies).containsExactly(
                 "{\"amount\":7.745}",
                 "{\"amount\":100.00}");
+    }
+
+    /**
+     * Byte-exact proof that request bodies go on the wire through the framework's own mapper
+     * ({@code JacksonProvider.defaultMapper()}), not REST Assured's classpath-discovered one:
+     * dates as ISO strings instead of {@code [2026,1,14]} / epoch, while null / empty string /
+     * empty array / decimal scale keep their exact representation and field order.
+     */
+    @Test
+    public void bodyFieldsSerializeToExactWireBytes() {
+        capturedBodies.clear();
+        RestAssuredHttpClient client = new RestAssuredHttpClient(
+                new RequestSpecBuilder().setContentType(ContentType.JSON).build());
+        EndpointDefinition capture = new EndpointDefinition(HttpVerb.POST, "/capture");
+
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("inner", "value");
+
+        new ApiRequestBuilder<>(client, baseUrl, capture, String.class)
+                .bodyField("date", LocalDate.of(2026, 1, 14))
+                .bodyField("offsetDateTime",
+                        OffsetDateTime.of(2026, 1, 14, 10, 30, 0, 0, ZoneOffset.UTC))
+                .bodyField("amount", new BigDecimal("10.50"))
+                .bodyField("explicitNull", null)
+                .bodyField("emptyString", "")
+                .bodyField("emptyList", List.of())
+                .bodyField("nested", nested)
+                .send();
+
+        assertThat(capturedBodies).containsExactly(
+                "{\"date\":\"2026-01-14\","
+                    + "\"offsetDateTime\":\"2026-01-14T10:30:00Z\","
+                    + "\"amount\":10.50,"
+                    + "\"explicitNull\":null,"
+                    + "\"emptyString\":\"\","
+                    + "\"emptyList\":[],"
+                    + "\"nested\":{\"inner\":\"value\"}}");
     }
 }

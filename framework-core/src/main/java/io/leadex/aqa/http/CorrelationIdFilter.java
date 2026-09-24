@@ -7,7 +7,7 @@ import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
 //Three responsibilities, all real:
 //1. Holds the correlation ID per thread — ThreadLocal ensures tests running in parallel don't bleed IDs into each other's requests
-//2. Injects it into every outgoing request as X-Correlation-Id header — REST Assured filter intercepts the request before it hits the wire
+//2. Injects it into every outgoing request as x-correlation-id header — REST Assured filter intercepts the request before it hits the wire
 //3. Lifecycle managed by BaseApiTest — set() in @BeforeMethod, clear() in @AfterMethod prevents leaks between tests
 //The ID itself is picked up by RestAssuredHttpClient.toApiResponse() from the response headers and stored in ApiResponse.correlationId(), so it's traceable end-to-end.
 
@@ -32,7 +32,7 @@ public class CorrelationIdFilter implements Filter {
                            FilterContext ctx) {
         String id = CURRENT.get();
         if (id != null) {
-            req.header("X-Correlation-Id", id);
+            req.header("x-correlation-id", id);
         }
         return ctx.next(req, res);
     }

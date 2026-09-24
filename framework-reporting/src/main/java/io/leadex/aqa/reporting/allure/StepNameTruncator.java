@@ -10,11 +10,13 @@ import java.util.List;
  * {@link io.qameta.allure.assertj.AllureAspectJ}.
  *
  * <h3>Truncation</h3>
- * <p>{@link io.qameta.allure.assertj.AllureAspectJ} names steps by calling
- * {@code ObjectUtils.toString()} on the value passed to {@code assertThat()}.
- * For arrays/collections this is a full {@code Arrays.toString()}
- * dump — an unreadable wall of text.  Names longer than {@value #MAX_NAME_LENGTH} characters
- * are truncated with {@code …}.
+ * <p>{@link io.qameta.allure.assertj.AllureAspectJ} names steps from the class simple name of the
+ * value passed to {@code assertThat()} (the vendored copy replaced the original's
+ * {@code ObjectUtils.toString()} dump) and, for assertion calls, from the prettified method name plus
+ * its arguments. {@code assertThat} steps are suppressed entirely for the Jackson node types,
+ * {@code ApiResponse} and the Splunk models by the aspect's {@code logAssertCreation} noise filter.
+ * Long names — a rendered JSON argument, a long field value — are truncated with {@code …} at
+ * {@value #MAX_NAME_LENGTH} characters.
  *
  * <h3>Noise filtering</h3>
  * <p>In {@link #beforeStepStop}, two categories of child steps are removed before the step is
@@ -29,6 +31,10 @@ import java.util.List;
  *       json-unit's {@code setCustomRepresentation}, {@code usingComparator}).  They add no
  *       value to a human reader of the report.</li>
  * </ol>
+ *
+ * <p>A third noise source never reaches this listener: {@code AllureAspectJ.logAssertCreation}
+ * suppresses the {@code assertThat [X]} creation step for the Jackson node types, {@code ApiResponse}
+ * and the Splunk models before the step is ever opened.
  *
  * <p>Registered via {@code META-INF/services/io.qameta.allure.listener.StepLifecycleListener}
  * so Allure picks it up automatically through {@code ServiceLoader}.

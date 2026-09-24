@@ -17,7 +17,8 @@ public final class UrlResolver {
      * <ol>
      *   <li>Substitute {@code {key}} placeholders in relUrl with pathParams values.</li>
      *   <li>If the resulting path is already absolute (starts with {@code http://} or {@code https://}),
-     *       return it as-is — this is the dev kostyl for public APIs where baseUrl is empty.</li>
+     *       return it as-is — supported escape hatch: an absolute relUrl overrides the environment
+     *       {@code baseUrl} (dev QoL for public APIs, mock servers, one-off targets).</li>
      *   <li>Otherwise concatenate baseUrl + resolved path.</li>
      * </ol>
      */

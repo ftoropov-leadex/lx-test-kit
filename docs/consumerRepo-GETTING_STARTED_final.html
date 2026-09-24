@@ -592,8 +592,8 @@ public void customerHasExpectedStatus(DataRow row) {
       <code>BigDecimal</code> with the exact written scale. Assert them response-side via
       <code>f.hasValue(bigDecimal)</code> (scale-insensitive).</li>
     <li>Optional <code>caseName</code> key: when present in a row, its value must be a non-blank,
-      dataset-unique string — it anchors the per-invocation entry in the Allure report
-      (<code>DataRow.toString()</code>).</li>
+      dataset-unique string — the Allure report names each invocation
+      <code>methodName — caseName</code>, so the case does not replace the method name.</li>
     <li>An explicit <code>null</code> in the dataset is <em>sent</em>, not omitted:
       <code>.bodyField(k, null)</code> writes JSON <code>null</code>;
       <code>.query()/.header()/.pathParam()</code> send the literal string <code>"null"</code>.

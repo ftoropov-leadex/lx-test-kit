@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation("systems.leadex.lxtestkit:framework-bundle:1.0.8")
+    testImplementation("systems.leadex.lxtestkit:framework-bundle:1.1.0")
 }
 ```
 
@@ -47,7 +47,7 @@ framework-bundle  (umbrella, re-exports everything)
 | `framework-core` | `HttpClient` interface, `RestAssuredHttpClient`, `CorrelationIdFilter`, config, `ApiResponse<T>` |
 | `framework-test-support` | `BaseApiTest`, `ApiRequestBuilder`, AssertJ DSL (`ApiResponseAssert`, `BodyAssert`, `FieldAssert`), schema/snapshot validators, retry, network detection |
 | `framework-reporting` | Allure TestNG listener, `AllureHttpFilter` (request/response attachments), `AllureAspectJ` LTW for automatic assertion steps |
-| `framework-splunk` | `SplunkClient`, `SplunkQueryBuilder`, `SplunkResponseAssert` / `SplunkResultAssert` DSL |
+| `framework-splunk` | `SplunkClient`, `SplunkQueryBuilder`, `SplunkResponseAssert` / `SplunkRowAssert` DSL |
 | `framework-bundle` | Umbrella POM — no source |
 
 ## Test architecture
@@ -92,7 +92,7 @@ Entry point: `ApiResponseAssert.assertThat(response)`.
 | `BodyAssert` | `isNotEmpty()`, `hasField(dotPath)`, `matchesSchema(path)`, `matchesSnapshot(name)`, plus lambda-scoped navigation: `field(dotPath, Consumer<FieldAssert>)`, `at(int, Consumer<BodyAssert>)`, `first(Consumer<BodyAssert>)`. All return `BodyAssert`. |
 | `FieldAssert` | Terminal assertions: `hasValue(Object)`, `isNotBlank()`, `isNotEmpty()`, `isPresent()`. All return `this` (`FieldAssert`), so several checks chain per field inside the consumer (`f -> f.isNotBlank().hasValue(x)`). |
 
-Navigation is **lambda-scoped**: `field`/`at`/`first` take a `Consumer` and run their assertions inside their own execution window, so the Allure report nests steps — `body > field 'Code' > hasValue '0'` — instead of rendering siblings. Example:
+Navigation is **lambda-scoped**: `field`/`at`/`first` take a `Consumer` and run their assertions inside their own execution window, so the Allure report nests steps — `body > field 'Code' > value is '0'` — instead of rendering siblings. Example:
 
 ```java
 ApiResponseAssert.assertThat(response)
@@ -126,12 +126,16 @@ ApiResponseAssert.assertThat(response)
 | `FRAMEWORK_RETRY_COUNT` | no | `0` | `FrameworkRetryAnalyzer` (max retries; `0` = off) |
 | `FRAMEWORK_RETRY_ON` | no | `""` | `FrameworkRetryAnalyzer` (csv: `network`, `timeout`, `5xx`; empty = any non-assertion failure) |
 | `FRAMEWORK_RETRY_DELAY_MS` | no | `0` | `FrameworkRetryAnalyzer` (sleep between attempts, ms) |
+| `FRAMEWORK_REPORT_HIDE_POLLS` | no | `true` | `AllureHttpFilter` (`false` = report every HTTP call, plumbing included) |
+| `FRAMEWORK_REPORT_POLL_PATHS` | no | `/services/auth/login,/services/search/jobs/export,/services/search/jobs/*` | `AllureHttpFilter` (csv of path patterns whose calls are executed but not reported as steps; `*` = one path segment, `**` = tail) |
 | `SPLUNK_BASE_URL` | yes* | — | `SplunkConnectionConfig` |
 | `SPLUNK_ALLOW_UNTRUSTED_SSL` | no | `false` | `SplunkConnectionConfig` |
+| `SPLUNK_EARLIEST_TIME` | no | `-15m` | `SplunkSearchConfig` (SPL `earliest_time` for default queries) |
+| `SPLUNK_AWAIT_TIMEOUT_S` | no | `60` | `SplunkSearchConfig` (`awaitNonEmpty` / `awaitResults` timeout, seconds) |
 | `CI` | no | `""` | `AllureTestNgListener` (non-blank suppresses local `executor.json`) |
 | `GITHUB_ACTOR` / `GITHUB_TOKEN` | CI only | — | GitHub Packages publish/resolve |
 
-> \* `SPLUNK_BASE_URL` is resolved at class-load time. Set it even if Splunk assertions are not the focus of the current suite, if any class referencing `SplunkSupport` is on the classpath.
+> \* `SPLUNK_BASE_URL` is resolved on the first real Splunk call, not at class load: `SplunkSupport` lazily initializes its client (initialization-on-demand holder), so a suite that never calls Splunk needs no `SPLUNK_*` vars. A missing var surfaces as `IllegalStateException` naming it at that first call.
 
 ## Running tests
 

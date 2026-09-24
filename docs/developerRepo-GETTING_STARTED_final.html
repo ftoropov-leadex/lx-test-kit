@@ -327,7 +327,7 @@
     <thead><tr><th>Tool</th><th>Requirement</th><th>Check</th></tr></thead>
     <tbody>
       <tr><td><code>JDK</code></td><td><strong>21</strong> (toolchain auto-detects; <code>JAVA_HOME</code> or IntelliJ Gradle JVM must point at Java 21)</td><td><code>java -version</code></td></tr>
-      <tr><td><code>Gradle</code></td><td>none — use the wrapper <code>./gradlew</code></td><td><code>./gradlew --version</code></td></tr>
+      <tr><td><code>Gradle</code></td><td>none needed — but the wrapper <strong>jar</strong> is not committed, so bootstrap once after cloning (step 1)</td><td><code>./gradlew --version</code></td></tr>
       <tr><td><code>Git</code></td><td>any recent version</td><td><code>git --version</code></td></tr>
       <tr><td><code>GitHub PAT</code></td><td>scope <strong><code>write:packages</code></strong> — required only to <em>publish</em> framework artifacts</td><td>—</td></tr>
     </tbody>
@@ -344,7 +344,16 @@
   <pre data-lang="sh"><code><span class="tok-cmd">git</span> <span class="tok-kw">clone</span> <span class="tok-str">https://github.com/ftoropov-leadex/lx-test-kit.git</span>
 <span class="tok-cmd">cd</span> <span class="tok-path">lx-test-kit</span></code></pre>
   <p>
-    A Gradle multi-module project. No additional setup is required before opening it in an IDE.
+    A Gradle multi-module project. The wrapper <em>scripts</em> are committed, but
+    <code>gradle/wrapper/gradle-wrapper.jar</code> is deliberately <strong>not</strong> — this repository is
+    public while the framework is corporate, so the bootstrap binary stays out of it. Bootstrap it once
+    with any local Gradle:
+  </p>
+  <pre data-lang="sh"><code><span class="tok-cmd">gradle</span> <span class="tok-kw">wrapper</span> <span class="tok-opt">--gradle-version</span> <span class="tok-val">9.4.0</span>     <span class="tok-cmt"># writes gradle/wrapper/gradle-wrapper.jar (48 KB)</span>
+<span class="tok-cmd">./gradlew</span> <span class="tok-opt">--version</span>                        <span class="tok-cmt"># 9.4.0</span></code></pre>
+  <p>
+    Everything below then works with <code>./gradlew</code> as written. Without the bootstrap it fails with
+    <code>Unable to access jarfile …/gradle/wrapper/gradle-wrapper.jar</code>.
   </p>
 
   <!-- ════════════ 2. Configure GitHub Packages credentials ════════════ -->
@@ -602,6 +611,14 @@
 
   <!-- ════════════ 16. Troubleshooting ════════════ -->
   <h2 id="s16"><span class="step-num">16</span> Troubleshooting</h2>
+
+  <h3><code>./gradlew</code> cannot start</h3>
+  <p>
+    <code>Unable to access jarfile …/gradle/wrapper/gradle-wrapper.jar</code> — the bootstrap jar is not
+    committed by design (public repository, corporate framework). Bootstrap it once with any local Gradle,
+    then re-run:
+  </p>
+  <pre data-lang="sh"><code><span class="tok-cmd">gradle</span> <span class="tok-kw">wrapper</span> <span class="tok-opt">--gradle-version</span> <span class="tok-val">9.4.0</span></code></pre>
 
   <h3>Build fails</h3>
   <p>Verify Java 21 is selected, the Gradle wrapper is used, and dependencies resolve. Refresh if needed:</p>

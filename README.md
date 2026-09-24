@@ -5,7 +5,8 @@ Multi-module REST API test framework. Java 21 · Gradle 9.4 · TestNG · REST As
 ## Prerequisites
 
 - Java 21
-- Gradle wrapper included (`./gradlew`)
+- Gradle wrapper scripts included (`./gradlew`) — the wrapper **jar** is not committed (public repo,
+  corporate framework), so bootstrap it once with a local Gradle: `gradle wrapper --gradle-version 9.4.0`
 - [Allure CLI](https://allurereport.org/docs/install/) for local reports
 - GitHub Packages read access (`GITHUB_ACTOR` / `GITHUB_TOKEN`)
 
@@ -146,6 +147,10 @@ ApiResponseAssert.assertThat(response)
 # With retry (env-driven; disabled by default)
 FRAMEWORK_RETRY_COUNT=2 FRAMEWORK_RETRY_ON=network,timeout,5xx FRAMEWORK_RETRY_DELAY_MS=500 ./gradlew test
 ```
+
+> `./gradlew` needs the bootstrap jar, which is not committed — see *Prerequisites*. After the one-time
+> `gradle wrapper --gradle-version 9.4.0`, the commands above work as written; alternatively substitute
+> `gradle` for `./gradlew` if a local Gradle 9.4 is on `PATH`.
 
 ## Allure reports
 

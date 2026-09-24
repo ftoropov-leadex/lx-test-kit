@@ -31,11 +31,18 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # NOT the wrapper. `gradle/wrapper/gradle-wrapper.jar` is deliberately not committed — this is
+      # a public repository for a corporate framework, and the owner keeps the bootstrap jar out of
+      # it (see known-issues.md §2). The action installs the distribution named in
+      # gradle/wrapper/gradle-wrapper.properties, so the Gradle version still matches the wrapper
+      # pin; only the commit of the 48 KB bootstrap jar is avoided.
       - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '9.4.0'
 
       # `build` before `publish`: the test gate must pass before artifacts leave the building.
       - name: Build and publish to GitHub Packages
-        run: ./gradlew clean build publish
+        run: gradle clean build publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

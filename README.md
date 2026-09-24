@@ -5,8 +5,7 @@ Multi-module REST API test framework. Java 21 · Gradle 9.4 · TestNG · REST As
 ## Prerequisites
 
 - Java 21
-- Gradle wrapper scripts included (`./gradlew`) — the wrapper **jar** is not committed (public repo,
-  corporate framework), so bootstrap it once with a local Gradle: `gradle wrapper --gradle-version 9.4.0`
+- Gradle wrapper scripts included (`./gradlew`) — the wrapper **jar** is not committed, so bootstrap it once with a local Gradle: `gradle wrapper --gradle-version 9.4.0`
 - [Allure CLI](https://allurereport.org/docs/install/) for local reports
 - GitHub Packages read access (`GITHUB_ACTOR` / `GITHUB_TOKEN`)
 

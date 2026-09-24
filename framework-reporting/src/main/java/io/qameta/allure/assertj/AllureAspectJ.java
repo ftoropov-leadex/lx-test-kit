@@ -256,7 +256,14 @@ public class AllureAspectJ {
             }
             case "hasStatus" -> "status " + args[0];
             case "isNotBlank" -> "not blank";
-            case "isNotEmpty" -> "not empty";
+            // isNotEmpty is declared on three assert classes with different meanings — name it per
+            // scope. FieldAssert keeps the generic wording: its leaves already sit inside a
+            // field 'x' frame, and prettify has no receiver state to name the path.
+            case "isNotEmpty" -> switch (declaringType) {
+                case "SplunkResponseAssert" -> "splunk response is not empty";
+                case "BodyAssert"           -> "body is a non-empty array";
+                default                     -> "not empty";
+            };
             case "matchesSchema" -> "matches schema";
             case "matchesSnapshot" -> "matches snapshot";
             // Lambda-scoped grouping methods: trailing Consumer arg ignored, name from args[0].
@@ -264,15 +271,17 @@ public class AllureAspectJ {
             case "body"  -> "body";
             case "first" -> "SplunkResponseAssert".equals(declaringType) ? "log record" : "first";
             case "at"    -> "at[" + args[0] + "]";
-            // Splunk leaves. hasField is arity-branched: BodyAssert.hasField(dotPath) is a
-            // one-arg published method and must keep the generic rendering it has today.
+            // Splunk leaves. hasField is arity-branched: the 1-arg overload is BodyAssert's structural
+            // check ("exists and is non-null"), the 2-arg one is SplunkRowAssert's value equality.
             case "hasField" -> args.length == 1
-                    ? "Contains field '" + args[0] + "'"
-                    : "Contains field '" + args[0] + "' = '" + args[1] + "'";
+                    ? "field '" + args[0] + "' is present"
+                    : "field '" + args[0] + "' has value '" + args[1] + "'";
             case "fieldContains" -> "field '" + args[0] + "' contains '" + args[1] + "'";
             case "hasSource" -> "source is '" + args[0] + "'";
             case "hasHost" -> "host is '" + args[0] + "'";
-            case "anyResultHasField" -> "anyResultHasField '" + args[0] + "' = '" + args[1] + "'";
+            case "rawContains" -> "log record contains '" + args[0] + "'";
+            case "hasResultCount" -> "log record count is " + args[0];
+            case "anyResultHasField" -> "any log record has field '" + args[0] + "' = '" + args[1] + "'";
             case "matching" -> "matching"; // predicate + consumer are lambdas: nothing to render
             default           -> null;
         };

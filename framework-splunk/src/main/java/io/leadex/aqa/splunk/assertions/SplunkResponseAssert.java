@@ -88,8 +88,8 @@ public final class SplunkResponseAssert extends AbstractAssert<SplunkResponseAss
     /*
      * Shared preconditions. Private on purpose: the aspect's pointcut is
      * execution(public * AbstractAssert+.*(..)), so a private helper is not woven and the guard stops
-     * rendering as a user-visible step — calling isNotEmpty() from first() puts a second "not empty"
-     * row next to the caller's own explicit one.
+     * rendering as a user-visible step — calling isNotEmpty() from first() puts a second
+     * "splunk response is not empty" row next to the caller's own explicit one.
      */
     private void requireResults() {
         isNotNull();

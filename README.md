@@ -92,7 +92,7 @@ Entry point: `ApiResponseAssert.assertThat(response)`.
 | `BodyAssert` | `isNotEmpty()`, `hasField(dotPath)`, `matchesSchema(path)`, `matchesSnapshot(name)`, plus lambda-scoped navigation: `field(dotPath, Consumer<FieldAssert>)`, `at(int, Consumer<BodyAssert>)`, `first(Consumer<BodyAssert>)`. All return `BodyAssert`. |
 | `FieldAssert` | Terminal assertions: `hasValue(Object)`, `isNotBlank()`, `isNotEmpty()`, `isPresent()`. All return `this` (`FieldAssert`), so several checks chain per field inside the consumer (`f -> f.isNotBlank().hasValue(x)`). |
 
-Navigation is **lambda-scoped**: `field`/`at`/`first` take a `Consumer` and run their assertions inside their own execution window, so the Allure report nests steps — `body > field 'Code' > hasValue '0'` — instead of rendering siblings. Example:
+Navigation is **lambda-scoped**: `field`/`at`/`first` take a `Consumer` and run their assertions inside their own execution window, so the Allure report nests steps — `body > field 'Code' > value is '0'` — instead of rendering siblings. Example:
 
 ```java
 ApiResponseAssert.assertThat(response)

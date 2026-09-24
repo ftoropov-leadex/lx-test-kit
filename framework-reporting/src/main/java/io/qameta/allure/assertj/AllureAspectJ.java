@@ -255,6 +255,9 @@ public class AllureAspectJ {
                         : "equals '" + value + "'";
             }
             case "hasStatus" -> "status " + args[0];
+            // FieldAssert terminals — each reads as a clause inside its `field 'x'` frame.
+            case "hasValue"  -> "value is '" + args[0] + "'";
+            case "isPresent" -> "is present";
             case "isNotBlank" -> "not blank";
             // isNotEmpty is declared on three assert classes with different meanings — name it per
             // scope. FieldAssert keeps the generic wording: its leaves already sit inside a
